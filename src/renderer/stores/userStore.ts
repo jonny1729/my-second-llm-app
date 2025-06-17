@@ -12,13 +12,18 @@ interface UserStats {
 interface UserStore {
   stats: UserStats | null;
   isLoading: boolean;
+  showLevelUpModal: boolean;
+  newLevel: number;
   loadUserStats: () => Promise<void>;
-  gainExperience: (expAmount: number, description: string, sourceType: string, sourceId?: number) => Promise<void>;
+  gainExperience: (expAmount: number, description: string, sourceType: string, sourceId?: number) => Promise<boolean>;
+  closeLevelUpModal: () => void;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
   stats: null,
   isLoading: false,
+  showLevelUpModal: false,
+  newLevel: 1,
 
   loadUserStats: async () => {
     set({ isLoading: true });
@@ -33,7 +38,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   gainExperience: async (expAmount: number, description: string, sourceType: string, sourceId?: number) => {
     const { stats } = get();
-    if (!stats) return;
+    if (!stats) return false;
 
     // 経験値ログを追加
     await addExperience(sourceType, sourceId || null, expAmount, description);
@@ -41,11 +46,13 @@ export const useUserStore = create<UserStore>((set, get) => ({
     let newExp = stats.current_exp + expAmount;
     let newLevel = stats.current_level;
     let newTotalExp = stats.total_exp + expAmount;
+    let leveledUp = false;
 
     // レベルアップチェック
     while (newExp >= stats.exp_to_next_level) {
       newExp -= stats.exp_to_next_level;
       newLevel++;
+      leveledUp = true;
     }
 
     // データベース更新
@@ -63,10 +70,19 @@ export const useUserStore = create<UserStore>((set, get) => ({
     set({ stats: updatedStats });
 
     // レベルアップした場合
-    if (newLevel > stats.current_level) {
-      // TODO: レベルアップアニメーション
+    if (leveledUp) {
+      set({ 
+        showLevelUpModal: true, 
+        newLevel: newLevel 
+      });
       console.log(`🎉 レベルアップ！ Lv.${newLevel}`);
     }
+
+    return leveledUp;
+  },
+
+  closeLevelUpModal: () => {
+    set({ showLevelUpModal: false });
   }
 }));
 

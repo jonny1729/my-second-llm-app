@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '../stores/taskStore';
+import ExpGainAnimation from './ExpGainAnimation';
 
 const TaskList: React.FC = () => {
   const { tasks, isLoading, loadTasks, addTask, completeTaskById, getPendingTasks } = useTaskStore();
@@ -10,6 +11,11 @@ const TaskList: React.FC = () => {
     description: '',
     priority: 2,
     exp_reward: 10
+  });
+  const [expAnimation, setExpAnimation] = useState({
+    isVisible: false,
+    expAmount: 0,
+    position: { x: 0, y: 0 }
   });
 
   useEffect(() => {
@@ -30,7 +36,25 @@ const TaskList: React.FC = () => {
     setIsAddingTask(false);
   };
 
-  const handleCompleteTask = async (taskId: number) => {
+  const handleCompleteTask = async (taskId: number, event: React.MouseEvent<HTMLButtonElement>) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // クリック位置を取得
+    const rect = event.currentTarget.getBoundingClientRect();
+    const position = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    };
+
+    // 経験値アニメーション開始
+    setExpAnimation({
+      isVisible: true,
+      expAmount: task.exp_reward,
+      position
+    });
+
+    // タスク完了処理
     await completeTaskById(taskId);
   };
 
@@ -162,7 +186,7 @@ const TaskList: React.FC = () => {
               <div className="task-actions">
                 <button
                   className="btn-complete"
-                  onClick={() => handleCompleteTask(task.id)}
+                  onClick={(e) => handleCompleteTask(task.id, e)}
                 >
                   ✓ 完了
                 </button>
@@ -178,6 +202,14 @@ const TaskList: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 経験値アニメーション */}
+      <ExpGainAnimation
+        isVisible={expAnimation.isVisible}
+        expAmount={expAnimation.expAmount}
+        position={expAnimation.position}
+        onComplete={() => setExpAnimation({ ...expAnimation, isVisible: false })}
+      />
     </div>
   );
 };

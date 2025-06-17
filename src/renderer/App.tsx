@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import TaskList from './components/TaskList';
+import LevelUpModal from './components/LevelUpModal';
 import { useUserStore } from './stores/userStore';
 
 type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'diary' | 'stats' | 'settings';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
-  const { stats, loadUserStats } = useUserStore();
+  const { stats, loadUserStats, showLevelUpModal, newLevel, closeLevelUpModal } = useUserStore();
 
   useEffect(() => {
     loadUserStats();
@@ -103,6 +104,13 @@ const App: React.FC = () => {
           {renderContent()}
         </div>
       </div>
+
+      {/* レベルアップモーダル */}
+      <LevelUpModal
+        isVisible={showLevelUpModal}
+        newLevel={newLevel}
+        onClose={closeLevelUpModal}
+      />
     </div>
   );
 };
