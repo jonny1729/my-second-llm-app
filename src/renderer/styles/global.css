@@ -611,3 +611,406 @@ body {
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
+
+/* Goal Manager Styles */
+.goal-manager-container {
+  padding: 1rem;
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.goal-header h2 {
+  color: #5a67d8;
+  margin: 0;
+}
+
+.add-goal-form {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.goal-input, .goal-textarea, .goal-select, .goal-input-small {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.goal-input-small {
+  width: auto;
+  min-width: 150px;
+}
+
+.goal-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.goal-form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.goal-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.3rem;
+  border-radius: 12px;
+}
+
+.tab-button {
+  padding: 0.8rem 1.2rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #4a5568;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #5a67d8;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.goal-item {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goal-content {
+  flex: 1;
+}
+
+.goal-header-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.goal-header-item h4 {
+  color: #2d3748;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.goal-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.deadline-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+}
+
+.deadline-badge.normal {
+  background: #38a169;
+}
+
+.deadline-badge.urgent {
+  background: #dd6b20;
+}
+
+.deadline-badge.overdue {
+  background: #e53e3e;
+}
+
+.goal-description {
+  color: #718096;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.goal-date {
+  color: #4a5568;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.goal-actions {
+  margin-left: 1rem;
+}
+
+/* Calendar Styles */
+.calendar-container {
+  padding: 1rem;
+  height: calc(100vh - 120px);
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.calendar-header h2 {
+  color: #5a67d8;
+  margin: 0;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.calendar-navigation h3 {
+  margin: 0;
+  color: #2d3748;
+  min-width: 120px;
+  text-align: center;
+}
+
+.nav-button {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #5a67d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+
+.calendar-layout {
+  display: flex;
+  gap: 1.5rem;
+  height: calc(100% - 80px);
+}
+
+.calendar-grid {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.weekday-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 1rem;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 600;
+  color: #4a5568;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  height: calc(100% - 50px);
+}
+
+.calendar-day {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.calendar-day:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.02);
+}
+
+.calendar-day.other-month {
+  opacity: 0.4;
+}
+
+.calendar-day.today {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.calendar-day.selected {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  transform: scale(1.05);
+}
+
+.day-number {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.task-indicators, .goal-indicators {
+  position: absolute;
+  bottom: 0.3rem;
+  right: 0.3rem;
+}
+
+.task-dot {
+  background: #48bb78;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.goal-dot {
+  font-size: 0.8rem;
+}
+
+.day-detail-panel {
+  width: 300px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: fit-content;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.day-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.day-detail-header h3 {
+  color: #2d3748;
+  margin: 0;
+}
+
+.close-detail {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #718096;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-detail:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #2d3748;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section h4 {
+  color: #4a5568;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.detail-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.detail-item {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.detail-item.completed {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.item-title {
+  display: block;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.3rem;
+}
+
+.item-exp, .item-priority {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.empty-day {
+  text-align: center;
+  color: #718096;
+  padding: 2rem 0;
+}
+
+.empty-day p:first-child {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}

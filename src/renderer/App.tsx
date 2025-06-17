@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import TaskList from './components/TaskList';
+import GoalManager from './components/GoalManager';
+import Calendar from './components/Calendar';
 import LevelUpModal from './components/LevelUpModal';
 import { useUserStore } from './stores/userStore';
 
-type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'diary' | 'stats' | 'settings';
+type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'stats' | 'settings';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
@@ -22,7 +24,9 @@ const App: React.FC = () => {
       case 'tasks':
         return <TaskList />;
       case 'goals':
-        return <div className="coming-soon">🎯 目標設定機能は開発中です</div>;
+        return <GoalManager />;
+      case 'calendar':
+        return <Calendar />;
       case 'diary':
         return <div className="coming-soon">📝 日記機能は開発中です</div>;
       case 'stats':
@@ -77,6 +81,12 @@ const App: React.FC = () => {
                 onClick={() => setActivePage('goals')}
               >
                 🎯 目標設定
+              </li>
+              <li 
+                className={activePage === 'calendar' ? 'active' : ''}
+                onClick={() => setActivePage('calendar')}
+              >
+                📅 カレンダー
               </li>
               <li 
                 className={activePage === 'diary' ? 'active' : ''}

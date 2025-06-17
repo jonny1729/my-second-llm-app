@@ -2,19 +2,23 @@ import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
 import { useTaskStore } from '../stores/taskStore';
+import { useGoalStore } from '../stores/goalStore';
 
 const Dashboard: React.FC = () => {
   const { stats, loadUserStats } = useUserStore();
   const { tasks, loadTasks, getTodaysTasks, getPendingTasks } = useTaskStore();
+  const { goals, loadGoals, getActiveGoals } = useGoalStore();
 
   useEffect(() => {
     loadUserStats();
     loadTasks();
-  }, [loadUserStats, loadTasks]);
+    loadGoals();
+  }, [loadUserStats, loadTasks, loadGoals]);
 
   const todaysTasks = getTodaysTasks();
   const pendingTasks = getPendingTasks();
   const completedTasks = tasks.filter(task => task.is_completed);
+  const activeGoals = getActiveGoals();
 
   const completionRate = tasks.length > 0 
     ? Math.round((completedTasks.length / tasks.length) * 100) 
@@ -75,9 +79,9 @@ const Dashboard: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <h3>未完了タスク</h3>
-            <p className="big-number">{pendingTasks.length}</p>
-            <small>残りのタスク</small>
+            <h3>進行中の目標</h3>
+            <p className="big-number">{activeGoals.length}</p>
+            <small>設定済み目標</small>
           </motion.div>
           
           <motion.div 
