@@ -1,0 +1,43 @@
+{
+  "name": "product",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "npm run build && electron .",
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
+    "dev:renderer": "webpack serve --mode=development",
+    "dev:main": "tsc src/main/main.ts --outDir dist --target es2020 --module commonjs --watch",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "webpack --mode=production",
+    "build:main": "tsc src/main/main.ts --outDir dist --target es2020 --module commonjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "concurrently": "^9.1.2",
+    "css-loader": "^7.1.2",
+    "electron": "^36.4.0",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.18.1",
+    "react": "^19.1.0",
+    "react-big-calendar": "^1.19.4",
+    "react-dom": "^19.1.0",
+    "sqlite3": "^5.1.7",
+    "zustand": "^5.0.5"
+  }
+}
