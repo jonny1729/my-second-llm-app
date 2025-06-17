@@ -1,7 +1,7 @@
 {
   "name": "product",
   "version": "1.0.0",
-  "main": "dist/main.js",
+  "main": "dist/main/main.js",
   "scripts": {
     "start": "npm run build && electron .",
     "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
