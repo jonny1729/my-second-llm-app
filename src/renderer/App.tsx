@@ -4,6 +4,8 @@ import Dashboard from './components/Dashboard';
 import TaskList from './components/TaskList';
 import GoalManager from './components/GoalManager';
 import Calendar from './components/Calendar';
+import Diary from './components/Diary';
+import Settings from './components/Settings';
 import LevelUpModal from './components/LevelUpModal';
 import { useUserStore } from './stores/userStore';
 
@@ -28,11 +30,11 @@ const App: React.FC = () => {
       case 'calendar':
         return <Calendar />;
       case 'diary':
-        return <div className="coming-soon">📝 日記機能は開発中です</div>;
+        return <Diary />;
       case 'stats':
         return <div className="coming-soon">📊 統計機能は開発中です</div>;
       case 'settings':
-        return <div className="coming-soon">⚙️ 設定機能は開発中です</div>;
+        return <Settings />;
       default:
         return <Dashboard />;
     }

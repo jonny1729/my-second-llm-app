@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '../stores/taskStore';
 import ExpGainAnimation from './ExpGainAnimation';
+import AIButton from './AIButton';
+import AIPlaceholder from './AIPlaceholder';
 
 const TaskList: React.FC = () => {
   const { tasks, isLoading, loadTasks, addTask, completeTaskById, getPendingTasks } = useTaskStore();
@@ -34,6 +36,16 @@ const TaskList: React.FC = () => {
 
     setNewTask({ title: '', description: '', priority: 2, exp_reward: 10 });
     setIsAddingTask(false);
+  };
+
+  const handleAIExpEvaluation = () => {
+    console.log('AI経験値評価機能は実装予定です');
+    alert('APIキーを設定すると、AIがタスクの適切な経験値を提案してくれます！');
+  };
+
+  const handleAITaskSuggestion = () => {
+    console.log('AIタスク提案機能は実装予定です');
+    alert('APIキーを設定すると、AIがあなたの目標に基づいてタスクを提案してくれます！');
   };
 
   const handleCompleteTask = async (taskId: number, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -135,14 +147,23 @@ const TaskList: React.FC = () => {
               </div>
               <div className="form-group">
                 <label>経験値:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={newTask.exp_reward}
-                  onChange={(e) => setNewTask({ ...newTask, exp_reward: Number(e.target.value) })}
-                  className="task-input-small"
-                />
+                <div className="exp-input-group">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={newTask.exp_reward}
+                    onChange={(e) => setNewTask({ ...newTask, exp_reward: Number(e.target.value) })}
+                    className="task-input-small"
+                  />
+                  <AIButton
+                    onClick={handleAIExpEvaluation}
+                    className="ai-exp-button"
+                    placeholderText="AIが適切な経験値を評価"
+                  >
+                    AI評価
+                  </AIButton>
+                </div>
               </div>
             </div>
             <div className="form-actions">
@@ -154,8 +175,25 @@ const TaskList: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* AIタスク提案 */}
+      <AIPlaceholder
+        feature="AIタスク提案"
+        description="あなたの目標に基づいて、AIが最適なタスクを提案します"
+        icon="💡"
+        onConfigureClick={() => window.location.hash = '#settings'}
+      />
+
       <div className="task-list">
-        <h3>未完了タスク ({pendingTasks.length})</h3>
+        <div className="task-list-header-section">
+          <h3>未完了タスク ({pendingTasks.length})</h3>
+          <AIButton
+            onClick={handleAITaskSuggestion}
+            className="ai-suggest-button"
+            placeholderText="AIがあなたの目標に基づいてタスクを提案"
+          >
+            AIタスク提案
+          </AIButton>
+        </div>
         <AnimatePresence>
           {pendingTasks.map((task) => (
             <motion.div
