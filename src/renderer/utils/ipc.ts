@@ -36,3 +36,35 @@ export const getAllGoals = () => ipcRenderer.invoke('get-all-goals');
 export const getApiSettings = () => ipcRenderer.invoke('get-api-settings');
 export const updateApiKey = (apiName: string, apiKey: string) => 
   ipcRenderer.invoke('update-api-key', apiName, apiKey);
+
+// アップデート関連
+export const checkForUpdates = () => ipcRenderer.invoke('check-for-updates');
+export const downloadAndInstallUpdate = () => ipcRenderer.invoke('download-and-install-update');
+export const getUpdateConfig = () => ipcRenderer.invoke('get-update-config');
+export const updateUpdateConfig = (config: any) => ipcRenderer.invoke('update-update-config', config);
+export const getLastUpdateCheck = () => ipcRenderer.invoke('get-last-update-check');
+export const getAppVersion = () => ipcRenderer.invoke('get-app-version');
+export const restartAndInstallUpdate = () => ipcRenderer.invoke('restart-and-install-update');
+export const openExternalLink = (url: string) => ipcRenderer.invoke('open-external-link', url);
+export const openFolderDialog = () => ipcRenderer.invoke('open-folder-dialog');
+export const backupUserData = () => ipcRenderer.invoke('backup-user-data');
+
+// ElectronAPIの型定義
+declare global {
+  interface Window {
+    electronAPI: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+      on: (channel: string, callback: (...args: any[]) => void) => void;
+      removeAllListeners: (channel: string) => void;
+    };
+  }
+}
+
+// window.electronAPIを設定
+if (typeof window !== 'undefined') {
+  window.electronAPI = {
+    invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+    on: (channel: string, callback: (...args: any[]) => void) => ipcRenderer.on(channel, callback),
+    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel)
+  };
+}

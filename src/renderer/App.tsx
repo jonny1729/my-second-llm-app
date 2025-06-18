@@ -7,6 +7,7 @@ import Calendar from './components/Calendar';
 import Diary from './components/Diary';
 import Settings from './components/Settings';
 import LevelUpModal from './components/LevelUpModal';
+import UpdateNotification, { UpdateInfo, UpdateProgress } from './components/UpdateNotification';
 import { useUserStore } from './stores/userStore';
 
 type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'stats' | 'settings';
@@ -14,10 +15,101 @@ type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'stat
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { stats, loadUserStats, showLevelUpModal, newLevel, closeLevelUpModal } = useUserStore();
+  
+  // アップデート関連のstate
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<UpdateProgress | null>(null);
 
   useEffect(() => {
     loadUserStats();
+    
+    // アップデート関連のイベントリスナーを設定
+    setupUpdateEventListeners();
+    
+    return () => {
+      // クリーンアップ
+      removeUpdateEventListeners();
+    };
   }, [loadUserStats]);
+
+  const setupUpdateEventListeners = () => {
+    if (window.electronAPI) {
+      // アップデート利用可能
+      window.electronAPI.on('update-available', (updateInfo: UpdateInfo) => {
+        setUpdateInfo(updateInfo);
+        setShowUpdateNotification(true);
+      });
+
+      // ダウンロード進捗
+      window.electronAPI.on('update-download-progress', (progress: UpdateProgress) => {
+        setDownloadProgress(progress);
+      });
+
+      // ダウンロード完了
+      window.electronAPI.on('update-downloaded', () => {
+        setIsDownloading(false);
+        setDownloadProgress(null);
+      });
+
+      // エラー
+      window.electronAPI.on('update-error', (error: string) => {
+        setIsDownloading(false);
+        setDownloadProgress(null);
+        alert(`アップデートエラー: ${error}`);
+      });
+
+      // アップデート利用不可
+      window.electronAPI.on('update-not-available', () => {
+        console.log('No updates available');
+      });
+
+      // 通知クリック
+      window.electronAPI.on('update-notification-clicked', (updateInfo: UpdateInfo) => {
+        setUpdateInfo(updateInfo);
+        setShowUpdateNotification(true);
+      });
+    }
+  };
+
+  const removeUpdateEventListeners = () => {
+    if (window.electronAPI) {
+      window.electronAPI.removeAllListeners('update-available');
+      window.electronAPI.removeAllListeners('update-download-progress');
+      window.electronAPI.removeAllListeners('update-downloaded');
+      window.electronAPI.removeAllListeners('update-error');
+      window.electronAPI.removeAllListeners('update-not-available');
+      window.electronAPI.removeAllListeners('update-notification-clicked');
+    }
+  };
+
+  // アップデート関連のハンドラー
+  const handleInstallNow = async () => {
+    try {
+      setIsDownloading(true);
+      await window.electronAPI.invoke('download-and-install-update');
+    } catch (error) {
+      console.error('Update install failed:', error);
+      setIsDownloading(false);
+      alert('アップデートのインストールに失敗しました');
+    }
+  };
+
+  const handleInstallLater = () => {
+    setShowUpdateNotification(false);
+    // 後で通知する設定を保存（必要に応じて）
+  };
+
+  const handleCloseUpdateNotification = () => {
+    setShowUpdateNotification(false);
+  };
+
+  const handleOpenUpdateSettings = () => {
+    setActivePage('settings');
+    setShowUpdateNotification(false);
+    // 設定画面でアップデートタブを開く（必要に応じて）
+  };
 
   const renderContent = () => {
     switch (activePage) {
@@ -122,6 +214,18 @@ const App: React.FC = () => {
         isVisible={showLevelUpModal}
         newLevel={newLevel}
         onClose={closeLevelUpModal}
+      />
+
+      {/* アップデート通知 */}
+      <UpdateNotification
+        isVisible={showUpdateNotification}
+        updateInfo={updateInfo}
+        isDownloading={isDownloading}
+        downloadProgress={downloadProgress}
+        onInstallNow={handleInstallNow}
+        onInstallLater={handleInstallLater}
+        onClose={handleCloseUpdateNotification}
+        onOpenSettings={handleOpenUpdateSettings}
       />
     </div>
   );

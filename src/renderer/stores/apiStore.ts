@@ -50,7 +50,7 @@ export const useApiStore = create<ApiStore>((set, get) => ({
 
   isApiConfigured: (apiName: string) => {
     const setting = get().apiSettings.find(s => s.api_name === apiName);
-    return setting?.api_key && setting.api_key.length > 0 && setting.is_active;
+    return Boolean(setting?.api_key && setting.api_key.length > 0 && setting.is_active);
   },
 
   getActiveApis: () => {

@@ -1,7 +1,8 @@
 {
-  "name": "product",
+  "name": "rpg-task-manager",
   "version": "1.0.0",
   "main": "dist/main/main.js",
+  "homepage": "https://github.com/username/rpg-task-manager",
   "scripts": {
     "start": "npm run build && electron .",
     "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
@@ -11,12 +12,17 @@
     "build:renderer": "webpack --mode=production",
     "build:main": "tsc src/main/main.ts --outDir dist --target es2020 --module commonjs",
     "copy-assets": "node -e \"require('fs').copyFileSync('src/database/schema.sql', 'dist/database/schema.sql')\"",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "publish": "npm run build && electron-builder --publish=always",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["rpg", "task-manager", "productivity", "gamification"],
+  "author": "Your Name",
   "license": "ISC",
-  "description": "",
+  "description": "RPG-style task manager with gamification features",
   "devDependencies": {
     "@types/node": "^24.0.3",
     "@types/react": "^19.1.8",
@@ -24,6 +30,7 @@
     "concurrently": "^9.1.2",
     "css-loader": "^7.1.2",
     "electron": "^36.4.0",
+    "electron-builder": "^26.0.12",
     "html-webpack-plugin": "^5.6.3",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.2",
@@ -34,11 +41,85 @@
   },
   "dependencies": {
     "date-fns": "^4.1.0",
+    "electron-updater": "^6.6.2",
     "framer-motion": "^12.18.1",
     "react": "^19.1.0",
     "react-big-calendar": "^1.19.4",
     "react-dom": "^19.1.0",
     "sqlite3": "^5.1.7",
     "zustand": "^5.0.5"
+  },
+  "build": {
+    "appId": "com.yourcompany.rpg-task-manager",
+    "productName": "RPG Task Manager",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "src/database/schema.sql",
+        "to": "database/schema.sql"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "username",
+      "repo": "rpg-task-manager",
+      "private": true
+    }
+  },
+  "updateConfig": {
+    "enabled": true,
+    "autoCheck": true,
+    "checkInterval": "weekly",
+    "sources": {
+      "github": {
+        "owner": "username",
+        "repo": "rpg-task-manager",
+        "private": true
+      },
+      "local": {
+        "path": "./updates"
+      }
+    }
   }
 }
