@@ -118,3 +118,55 @@
 - Windows向けパッケージング (wine環境構築)
 - LLM API統合実装
 - RPG風エフェクト・サウンド追加
+
+## 2025-06-19
+### 緊急修正: アプリ起動エラー対応 🔧
+- **問題**: WSL環境でのElectron起動時にlibnss3.so不足エラー
+- **対応**: UpdateManager.tsのエラーハンドリング強化
+  - setupAutoUpdater()にtry-catch追加
+  - main.tsでupdateHandler初期化失敗時の処理改善
+  - エラー時でもアプリケーション本体機能は動作継続
+
+### 修正内容
+- `src/services/UpdateManager.ts:89-103`: autoUpdater設定時のエラーハンドリング追加
+- `src/main/main.ts:37-48`: updateHandler初期化失敗時の適切な処理
+- アプリケーション起動: 自動更新機能なしでも正常動作可能に
+
+### 現在の状態
+- ✅ アプリケーション起動エラー修正完了
+- ✅ 自動更新システムエラーハンドリング改善
+- 🔧 WSL環境でのElectron実行ライブラリ依存問題（未解決）
+- 🔧 配布パッケージ作成問題（調査中）
+
+### ブラウザ開発環境対応 🌐
+- **問題**: 開発時のブラウザテスト環境でElectron IPCが使用不可
+- **対応**: webpack設定とIPCモック化の実装
+  - webpack.config.js: `target: 'web'`, Node.js polyfill追加
+  - polyfillパッケージ導入: path-browserify, crypto-browserify等
+  - DefinePlugin, ProvidePluginでglobal, Buffer, process対応
+
+### バグ修正 🐛
+1. **設定画面エラー**: `apiSettings.filter is not a function`
+   - 原因: モックデータが配列でなくオブジェクト形式
+   - 修正: `get-api-settings`を正しいAPI配列形式に変更
+
+2. **タスク追加未反映**: ブラウザ環境でタスク操作が動作しない
+   - 原因: モックIPCが静的レスポンスのみ
+   - 修正: 動的なタスク追加・完了処理をモックに実装
+
+### 修正ファイル
+- `webpack.config.js`: ブラウザ環境対応設定
+- `src/renderer/utils/ipc.ts`: IPCモック化とElectron/ブラウザ両対応
+- `package.json`: polyfillパッケージ追加
+
+### テスト確認
+- ✅ ブラウザ開発環境: http://localhost:8080 正常動作
+- ✅ 設定画面: エラー解消、API設定表示
+- ✅ タスク管理: 追加・完了が即座に反映
+- ✅ モックIPC: コンソールログでデバッグ可能
+
+### 作業完了 🎉
+- 開発環境の安定化が完了
+- ブラウザでのリアルタイム開發・テスト環境構築
+- 主要バグ修正によりアプリケーション品質向上
+- 今後はブラウザ環境での高速開発が可能

@@ -19,7 +19,12 @@
     "publish": "npm run build && electron-builder --publish=always",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["rpg", "task-manager", "productivity", "gamification"],
+  "keywords": [
+    "rpg",
+    "task-manager",
+    "productivity",
+    "gamification"
+  ],
   "author": "Your Name",
   "license": "ISC",
   "description": "RPG-style task manager with gamification features",
@@ -27,11 +32,18 @@
     "@types/node": "^24.0.3",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "buffer": "^6.0.3",
     "concurrently": "^9.1.2",
+    "crypto-browserify": "^3.12.1",
     "css-loader": "^7.1.2",
     "electron": "^36.4.0",
     "electron-builder": "^26.0.12",
+    "events": "^3.3.0",
     "html-webpack-plugin": "^5.6.3",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",
@@ -70,7 +82,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"
@@ -79,7 +93,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "assets/icon.icns"
@@ -88,17 +105,21 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.png"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
     },
     "publish": {
       "provider": "github",

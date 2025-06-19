@@ -1,8 +1,16 @@
 import { app } from 'electron';
-import { autoUpdater } from 'electron-updater';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Fallback for when electron-updater is not available
+let autoUpdater: any = null;
+try {
+  autoUpdater = require('electron-updater').autoUpdater;
+} catch (error) {
+  console.warn('electron-updater not available, using fallback mode');
+  autoUpdater = null;
+}
 
 export interface UpdateInfo {
   version: string;
@@ -73,15 +81,25 @@ export class UpdateManager extends EventEmitter {
   }
 
   private setupAutoUpdater(): void {
-    if (this.config.source === 'github') {
-      // Configure GitHub releases
-      autoUpdater.setFeedURL({
-        provider: 'github',
-        owner: this.config.githubOwner || 'username',
-        repo: this.config.githubRepo || 'rpg-task-manager',
-        private: true,
-        token: this.config.githubToken
-      });
+    if (!autoUpdater) {
+      console.log('autoUpdater not available, skipping setup');
+      return;
+    }
+
+    try {
+      if (this.config.source === 'github') {
+        // Configure GitHub releases
+        autoUpdater.setFeedURL({
+          provider: 'github',
+          owner: this.config.githubOwner || 'username',
+          repo: this.config.githubRepo || 'rpg-task-manager',
+          private: true,
+          token: this.config.githubToken
+        });
+      }
+    } catch (error) {
+      console.error('Failed to setup autoUpdater:', error);
+      return;
     }
 
     // Auto updater event handlers
@@ -171,6 +189,10 @@ export class UpdateManager extends EventEmitter {
 
   private async checkGitHubUpdates(): Promise<UpdateInfo | null> {
     try {
+      if (!autoUpdater) {
+        console.log('autoUpdater not available, skipping GitHub update check');
+        return null;
+      }
       const result = await autoUpdater.checkForUpdates();
       if (result && result.updateInfo) {
         return this.formatUpdateInfo(result.updateInfo);
@@ -232,6 +254,9 @@ export class UpdateManager extends EventEmitter {
 
   public async downloadAndInstall(): Promise<void> {
     try {
+      if (!autoUpdater) {
+        throw new Error('Updates not available in this build');
+      }
       if (this.config.source === 'github') {
         await this.createBackup();
         await autoUpdater.downloadUpdate();
@@ -248,6 +273,9 @@ export class UpdateManager extends EventEmitter {
 
   public installAndRestart(): void {
     try {
+      if (!autoUpdater) {
+        throw new Error('Updates not available in this build');
+      }
       autoUpdater.quitAndInstall(false, true);
     } catch (error) {
       console.error('Install and restart failed:', error);

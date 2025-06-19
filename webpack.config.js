@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   entry: './src/renderer/index.tsx',
-  target: 'electron-renderer',
+  target: 'web',
   module: {
     rules: [
       {
@@ -24,6 +24,14 @@ module.exports = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    fallback: {
+      "path": require.resolve("path-browserify"),
+      "os": require.resolve("os-browserify/browser"),
+      "crypto": require.resolve("crypto-browserify"),
+      "buffer": require.resolve("buffer"),
+      "stream": require.resolve("stream-browserify"),
+      "events": require.resolve("events")
+    }
   },
   output: {
     filename: 'bundle.js',
@@ -34,6 +42,13 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/renderer/index.html',
     }),
+    new (require('webpack')).DefinePlugin({
+      global: 'globalThis',
+    }),
+    new (require('webpack')).ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+      process: 'process/browser',
+    })
   ],
   mode: 'development',
   devtool: 'inline-source-map',

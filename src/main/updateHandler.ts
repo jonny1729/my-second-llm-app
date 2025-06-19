@@ -7,9 +7,14 @@ export class UpdateHandler {
   private mainWindow: BrowserWindow | null = null;
 
   constructor() {
-    this.updateManager = getUpdateManager();
-    this.setupUpdateEvents();
-    this.setupIpcHandlers();
+    try {
+      this.updateManager = getUpdateManager();
+      this.setupUpdateEvents();
+      this.setupIpcHandlers();
+    } catch (error) {
+      console.error('UpdateHandler initialization failed:', error);
+      throw error;
+    }
   }
 
   public setMainWindow(window: BrowserWindow) {
