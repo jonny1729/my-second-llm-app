@@ -82,19 +82,12 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleCheckForUpdates = () => {
-    // IPCを使ってアップデートチェック（実装時に追加）
-    // window.electronAPI.checkForUpdates();
-    console.log('Checking for updates...');
-    alert('アップデートチェック機能は実装中です');
-  };
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'api':
         return renderApiSettings();
       case 'update':
-        return <UpdateSettings onCheckForUpdates={handleCheckForUpdates} />;
+        return <UpdateSettings />;
       case 'app':
         return renderAppSettings();
       case 'data':

@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import Database from '../database/database';
+import { getUpdateManager } from '../services/UpdateManager';
 
 let database: Database;
 
@@ -101,6 +102,60 @@ export function setupIpcHandlers(db: Database) {
       return true;
     } catch (error) {
       console.error('APIキー更新エラー:', error);
+      throw error;
+    }
+  });
+
+  // アップデート関連
+  ipcMain.handle('get-update-config', async () => {
+    try {
+      const updateManager = getUpdateManager();
+      return updateManager.getConfig();
+    } catch (error) {
+      console.error('アップデート設定取得エラー:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('update-update-config', async (event, config) => {
+    try {
+      const updateManager = getUpdateManager();
+      updateManager.updateConfig(config);
+      return true;
+    } catch (error) {
+      console.error('アップデート設定更新エラー:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('check-for-updates', async () => {
+    try {
+      const updateManager = getUpdateManager();
+      return await updateManager.checkForUpdates();
+    } catch (error) {
+      console.error('アップデートチェックエラー:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('download-and-install-update', async () => {
+    try {
+      const updateManager = getUpdateManager();
+      await updateManager.downloadAndInstall();
+      return true;
+    } catch (error) {
+      console.error('アップデートダウンロード・インストールエラー:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('install-and-restart', async () => {
+    try {
+      const updateManager = getUpdateManager();
+      updateManager.installAndRestart();
+      return true;
+    } catch (error) {
+      console.error('インストール・再起動エラー:', error);
       throw error;
     }
   });

@@ -189,15 +189,64 @@ export class UpdateManager extends EventEmitter {
 
   private async checkGitHubUpdates(): Promise<UpdateInfo | null> {
     try {
-      if (!autoUpdater) {
-        console.log('autoUpdater not available, skipping GitHub update check');
-        return null;
+      // GitHub API直接呼び出しでリリース情報を取得
+      const owner = this.config.githubOwner || 'username';
+      const repo = this.config.githubRepo || 'rpg-task-manager';
+      const currentVersion = app.getVersion();
+      
+      console.log(`Checking GitHub releases for ${owner}/${repo}`);
+      
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'RPG-Task-Manager'
+      };
+      
+      // GitHubトークンがある場合は認証ヘッダーを追加
+      if (this.config.githubToken) {
+        headers['Authorization'] = `token ${this.config.githubToken}`;
       }
-      const result = await autoUpdater.checkForUpdates();
-      if (result && result.updateInfo) {
-        return this.formatUpdateInfo(result.updateInfo);
+      
+      const response = await fetch(apiUrl, { headers });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('リポジトリまたはリリースが見つかりません');
+        } else if (response.status === 401) {
+          throw new Error('GitHubトークンが無効です');
+        } else if (response.status === 403) {
+          throw new Error('API利用制限に達しています');
+        }
+        throw new Error(`GitHub API error: ${response.status}`);
       }
-      return null;
+      
+      const release = await response.json();
+      
+      console.log(`Latest release: ${release.tag_name}, Current: ${currentVersion}`);
+      
+      // バージョン比較
+      const latestVersion = release.tag_name.replace(/^v/, '');
+      const hasUpdate = this.isNewerVersion(latestVersion, currentVersion);
+      
+      if (hasUpdate) {
+        const downloadSize = release.assets?.[0]?.size || 0;
+        return {
+          version: latestVersion,
+          releaseNotes: release.body || 'リリースノートがありません',
+          releaseDate: release.published_at,
+          downloadSize: downloadSize,
+          hasUpdate: true
+        };
+      }
+      
+      return {
+        version: latestVersion,
+        releaseNotes: 'アップデートはありません',
+        releaseDate: release.published_at,
+        downloadSize: 0,
+        hasUpdate: false
+      };
+      
     } catch (error) {
       console.error('GitHub update check failed:', error);
       throw error;

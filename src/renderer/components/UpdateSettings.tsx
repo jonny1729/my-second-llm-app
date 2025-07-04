@@ -13,7 +13,7 @@ export interface UpdateConfig {
 }
 
 interface UpdateSettingsProps {
-  onCheckForUpdates: () => void;
+  onCheckForUpdates?: () => void;
 }
 
 const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) => {
@@ -30,6 +30,8 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
   const [showGithubToken, setShowGithubToken] = useState(false);
   const [tempGithubToken, setTempGithubToken] = useState('');
   const [lastCheckTime, setLastCheckTime] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [updateResult, setUpdateResult] = useState<string | null>(null);
 
   useEffect(() => {
     loadConfig();
@@ -38,15 +40,15 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
   const loadConfig = async () => {
     try {
       setIsLoading(true);
-      // IPCを使って設定を読み込み（実装時に追加）
-      // const savedConfig = await window.electronAPI.getUpdateConfig();
-      // if (savedConfig) setConfig(savedConfig);
-      
-      // 最後のチェック時間を取得
-      // const lastCheck = await window.electronAPI.getLastUpdateCheck();
-      // setLastCheckTime(lastCheck);
-      
-      // 仮のデータ
+      if (window.electronAPI) {
+        const savedConfig = await window.electronAPI.invoke('get-update-config');
+        if (savedConfig) {
+          setConfig(savedConfig);
+          if (savedConfig.githubToken) {
+            setTempGithubToken(''); // トークンは表示しない
+          }
+        }
+      }
       setLastCheckTime(new Date().toISOString());
     } catch (error) {
       console.error('設定の読み込みに失敗:', error);
@@ -58,10 +60,13 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
   const saveConfig = async () => {
     try {
       setIsSaving(true);
-      // IPCを使って設定を保存（実装時に追加）
-      // await window.electronAPI.updateUpdateConfig(config);
-      console.log('設定保存:', config);
-      alert('設定が保存されました');
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('update-update-config', config);
+        alert('設定が保存されました');
+      } else {
+        console.log('設定保存:', config);
+        alert('設定が保存されました（ブラウザモード）');
+      }
     } catch (error) {
       console.error('設定の保存に失敗:', error);
       alert('設定の保存に失敗しました');
@@ -79,6 +84,35 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
       updateConfig({ githubToken: tempGithubToken.trim() });
       setTempGithubToken('');
       alert('GitHubトークンが設定されました');
+    }
+  };
+
+  const handleCheckForUpdates = async () => {
+    try {
+      setIsChecking(true);
+      setUpdateResult(null);
+      
+      if (window.electronAPI) {
+        const result = await window.electronAPI.invoke('check-for-updates');
+        setLastCheckTime(new Date().toISOString());
+        
+        if (result && result.hasUpdate) {
+          setUpdateResult(`新しいバージョン v${result.version} が利用可能です！`);
+        } else {
+          setUpdateResult('最新バージョンです');
+        }
+      } else {
+        // ブラウザモードでは外部コールバックを使用
+        if (onCheckForUpdates) {
+          onCheckForUpdates();
+        }
+        setUpdateResult('アップデートチェック完了（ブラウザモード）');
+      }
+    } catch (error) {
+      console.error('アップデートチェックエラー:', error);
+      setUpdateResult(`エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -341,17 +375,26 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
           
           <div className="status-item">
             <span className="status-label">現在のバージョン:</span>
-            <span className="status-value">v1.0.0</span>
+            <span className="status-value">v1.1.0</span>
           </div>
+
+          {updateResult && (
+            <div className="status-item">
+              <span className="status-label">チェック結果:</span>
+              <span className={`status-value ${updateResult.includes('エラー') ? 'error' : updateResult.includes('利用可能') ? 'update-available' : 'up-to-date'}`}>
+                {updateResult}
+              </span>
+            </div>
+          )}
 
           <div className="status-actions">
             <button
               className="btn-primary"
-              onClick={onCheckForUpdates}
-              disabled={!config.enabled}
+              onClick={handleCheckForUpdates}
+              disabled={!config.enabled || isChecking}
             >
               <span className="btn-icon">🔍</span>
-              今すぐチェック
+              {isChecking ? 'チェック中...' : '今すぐチェック'}
             </button>
             
             <button
