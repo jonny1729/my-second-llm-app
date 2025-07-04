@@ -21,3 +21,9 @@ lib-cov/
 *.swo
 .vscode/
 .idea/
+
+# Release files
+release/
+temp_asar/
+debug-*.js
+test-server.js
