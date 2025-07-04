@@ -7,15 +7,23 @@ import Calendar from './components/Calendar';
 import Diary from './components/Diary';
 import Settings from './components/Settings';
 import PomodoroTimer from './components/PomodoroTimer';
+import PomodoroPopup from './components/PomodoroPopup';
 import LevelUpModal from './components/LevelUpModal';
 import UpdateNotification, { UpdateInfo, UpdateProgress } from './components/UpdateNotification';
 import { useUserStore } from './stores/userStore';
+import { usePomodoroStore } from './stores/pomodoroStore';
 
 type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'pomodoro' | 'stats' | 'settings';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const { stats, loadUserStats, showLevelUpModal, newLevel, closeLevelUpModal } = useUserStore();
+  
+  // Pomodoro store for popup functionality
+  const {
+    mode, timeLeft, isRunning, sessions, showPopup,
+    setIsRunning, setShowPopup, resetTimer, formatTime
+  } = usePomodoroStore();
   
   // アップデート関連のstate
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
@@ -111,6 +119,22 @@ const App: React.FC = () => {
     setShowUpdateNotification(false);
     // 設定画面でアップデートタブを開く（必要に応じて）
   };
+
+  // Pomodoro popup handlers
+  const handlePomodoroToggle = () => {
+    setIsRunning(!isRunning);
+  };
+
+  const handlePomodoroReset = () => {
+    resetTimer();
+  };
+
+  const handlePomodoroClose = () => {
+    setShowPopup(false);
+  };
+
+  // Show popup when timer is running and not on pomodoro page
+  const shouldShowPomodoroPopup = showPopup && isRunning && activePage !== 'pomodoro';
 
   const renderContent = () => {
     switch (activePage) {
@@ -235,6 +259,18 @@ const App: React.FC = () => {
         onInstallLater={handleInstallLater}
         onClose={handleCloseUpdateNotification}
         onOpenSettings={handleOpenUpdateSettings}
+      />
+
+      {/* ポモドーロポップアップ */}
+      <PomodoroPopup
+        isVisible={shouldShowPomodoroPopup}
+        timeLeft={timeLeft}
+        mode={mode}
+        isRunning={isRunning}
+        sessions={sessions}
+        onToggle={handlePomodoroToggle}
+        onReset={handlePomodoroReset}
+        onClose={handlePomodoroClose}
       />
     </div>
   );

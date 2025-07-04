@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
+import { usePomodoroStore } from '../stores/pomodoroStore';
 
 interface PomodoroTimerProps {
   // 必要に応じて props を追加
@@ -11,16 +12,15 @@ type TimerMode = 'work' | 'shortBreak' | 'longBreak';
 const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
   const { addExperience } = useUserStore();
   
-  // タイマー設定 (分単位)
-  const [workTime, setWorkTime] = useState(25);
-  const [shortBreakTime, setShortBreakTime] = useState(5);
-  const [longBreakTime, setLongBreakTime] = useState(15);
+  // Zustand store from global state
+  const {
+    workTime, shortBreakTime, longBreakTime,
+    mode, timeLeft, isRunning, sessions, autoStart, showPopup,
+    setWorkTime, setShortBreakTime, setLongBreakTime,
+    setMode, setTimeLeft, setIsRunning, setSessions, setAutoStart, setShowPopup,
+    getTotalTime, formatTime, getModeText, resetTimer
+  } = usePomodoroStore();
   
-  // タイマー状態
-  const [mode, setMode] = useState<TimerMode>('work');
-  const [timeLeft, setTimeLeft] = useState(workTime * 60);
-  const [isRunning, setIsRunning] = useState(false);
-  const [sessions, setSessions] = useState(0);
   const [showCompleteEffect, setShowCompleteEffect] = useState(false);
   
   // 効果音用のAudioContextとオーディオ参照
@@ -30,7 +30,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
   // 初期化時にタイマーをリセット
   useEffect(() => {
     resetTimer();
-  }, [workTime, shortBreakTime, longBreakTime]);
+  }, [workTime, shortBreakTime, longBreakTime, resetTimer]);
 
   // タイマーの実行
   useEffect(() => {
@@ -136,13 +136,19 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
       setMode('work');
       setTimeLeft(workTime * 60);
     }
+    
+    // 自動スタート機能
+    if (autoStart) {
+      setTimeout(() => {
+        setIsRunning(true);
+      }, 2000); // 2秒後に自動開始
+    }
   };
 
-  // タイマーをリセット
-  const resetTimer = () => {
+  // タイマーをリセット（ローカル版）
+  const resetTimerLocal = () => {
     setIsRunning(false);
-    setMode('work');
-    setTimeLeft(workTime * 60);
+    resetTimer();
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -153,22 +159,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
     setIsRunning(!isRunning);
   };
 
-  // 時間を分:秒の形式でフォーマット
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   // 進捗の計算
-  const getTotalTime = () => {
-    switch (mode) {
-      case 'work': return workTime * 60;
-      case 'shortBreak': return shortBreakTime * 60;
-      case 'longBreak': return longBreakTime * 60;
-      default: return workTime * 60;
-    }
-  };
 
   const progress = ((getTotalTime() - timeLeft) / getTotalTime()) * 100;
 
@@ -178,26 +169,30 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
       case 'work':
         return {
           title: '🍅 作業時間',
-          color: '#e74c3c',
-          bgColor: 'rgba(231, 76, 60, 0.1)',
+          color: '#1976d2',
+          bgColor: 'rgba(33, 150, 243, 0.1)',
+          progressColor: '#2196f3',
         };
       case 'shortBreak':
         return {
           title: '☕ 短い休憩',
-          color: '#27ae60',
-          bgColor: 'rgba(39, 174, 96, 0.1)',
+          color: '#0288d1',
+          bgColor: 'rgba(3, 169, 244, 0.1)',
+          progressColor: '#03a9f4',
         };
       case 'longBreak':
         return {
           title: '🛋️ 長い休憩',
-          color: '#3498db',
-          bgColor: 'rgba(52, 152, 219, 0.1)',
+          color: '#0277bd',
+          bgColor: 'rgba(2, 136, 209, 0.1)',
+          progressColor: '#0288d1',
         };
       default:
         return {
           title: '🍅 作業時間',
-          color: '#e74c3c',
-          bgColor: 'rgba(231, 76, 60, 0.1)',
+          color: '#1976d2',
+          bgColor: 'rgba(33, 150, 243, 0.1)',
+          progressColor: '#2196f3',
         };
     }
   };
@@ -224,8 +219,8 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
           <motion.div
             className="time-circle"
             style={{ 
-              borderColor: modeConfig.color,
-              background: `conic-gradient(${modeConfig.color} ${progress}%, transparent ${progress}%)`
+              borderColor: modeConfig.progressColor,
+              background: `conic-gradient(${modeConfig.progressColor} ${progress}%, #e3f2fd ${progress}%)`
             }}
           >
             <div className="time-text" style={{ color: modeConfig.color }}>
@@ -247,7 +242,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
 
           <motion.button
             className="timer-btn reset"
-            onClick={resetTimer}
+            onClick={resetTimerLocal}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -256,40 +251,70 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
         </div>
 
         <div className="timer-settings">
-          <div className="setting-group">
-            <label>作業時間 (分):</label>
-            <input
-              type="number"
-              value={workTime}
-              onChange={(e) => setWorkTime(Number(e.target.value))}
-              min="1"
-              max="60"
-              disabled={isRunning}
-            />
+          <div className="settings-header">
+            <h3 className="settings-title">⚙️ 設定</h3>
+            <div className="auto-start-toggle">
+              <span style={{ color: '#1565c0', fontWeight: '600' }}>自動スタート</span>
+              <div 
+                className={`toggle-switch ${autoStart ? 'active' : ''}`}
+                onClick={() => setAutoStart(!autoStart)}
+              >
+                <div className="toggle-slider"></div>
+              </div>
+            </div>
           </div>
 
-          <div className="setting-group">
-            <label>短い休憩 (分):</label>
-            <input
-              type="number"
-              value={shortBreakTime}
-              onChange={(e) => setShortBreakTime(Number(e.target.value))}
-              min="1"
-              max="30"
-              disabled={isRunning}
-            />
+          <div className="time-settings">
+            <div className="setting-group">
+              <label>🍅 作業時間 (分)</label>
+              <input
+                type="number"
+                value={workTime}
+                onChange={(e) => setWorkTime(Number(e.target.value))}
+                min="1"
+                max="60"
+                disabled={isRunning}
+              />
+            </div>
+
+            <div className="setting-group">
+              <label>☕ 短い休憩 (分)</label>
+              <input
+                type="number"
+                value={shortBreakTime}
+                onChange={(e) => setShortBreakTime(Number(e.target.value))}
+                min="1"
+                max="30"
+                disabled={isRunning}
+              />
+            </div>
+
+            <div className="setting-group">
+              <label>🛋️ 長い休憩 (分)</label>
+              <input
+                type="number"
+                value={longBreakTime}
+                onChange={(e) => setLongBreakTime(Number(e.target.value))}
+                min="1"
+                max="60"
+                disabled={isRunning}
+              />
+            </div>
           </div>
 
-          <div className="setting-group">
-            <label>長い休憩 (分):</label>
-            <input
-              type="number"
-              value={longBreakTime}
-              onChange={(e) => setLongBreakTime(Number(e.target.value))}
-              min="1"
-              max="60"
-              disabled={isRunning}
-            />
+          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+            <motion.button
+              className="timer-btn"
+              onClick={() => setShowPopup(!showPopup)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ 
+                background: showPopup ? 'linear-gradient(135deg, #1976d2, #1565c0)' : 'linear-gradient(135deg, #90a4ae, #607d8b)',
+                minWidth: '160px'
+              }}
+            >
+              {showPopup ? '📌 ポップアップ表示中' : '📱 ポップアップ表示'}
+            </motion.button>
           </div>
         </div>
       </motion.div>
