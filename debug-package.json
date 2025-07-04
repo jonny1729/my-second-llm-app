@@ -1,0 +1,8 @@
+{
+  "name": "rpg-task-manager-debug",
+  "version": "1.0.0",
+  "main": "debug-main.js",
+  "scripts": {
+    "debug": "electron debug-main.js"
+  }
+}

@@ -57,8 +57,8 @@ export class UpdateManager extends EventEmitter {
       autoCheck: true,
       checkInterval: 'weekly',
       source: 'github',
-      githubOwner: 'username',
-      githubRepo: 'rpg-task-manager'
+      githubOwner: 'jonny1729',
+      githubRepo: 'my-second-llm-app'
     };
 
     try {
