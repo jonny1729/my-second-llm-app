@@ -55,7 +55,9 @@ async function createWindow(): Promise<void> {
         contextIsolation: false,
       },
       title: 'RPG Task Manager',
-      show: false, // 準備完了まで非表示
+      show: true, // 即座に表示
+      center: true, // 画面中央に表示
+      autoHideMenuBar: true, // メニューバーを自動的に隠す
     });
 
     // アップデートハンドラーが利用可能な場合のみ設定
@@ -90,18 +92,20 @@ async function createWindow(): Promise<void> {
       mainWindow.webContents.openDevTools();
     } else {
       try {
+        console.log('Attempting to load file:', indexPath);
         await mainWindow.loadFile(indexPath);
+        console.log('File loaded successfully');
       } catch (error) {
         console.error('Failed to load index.html:', error);
-        // Force show window even if loading fails
-        mainWindow.show();
+        // Show error message in window
+        mainWindow.loadURL(`data:text/html,<html><body><h1>Error Loading App</h1><p>Could not load: ${indexPath}</p><p>Error: ${error.message}</p></body></html>`);
       }
     }
 
-    // ウィンドウの準備完了後に表示
+    // ウィンドウは既に表示されているが、追加の準備完了処理
     mainWindow.once('ready-to-show', () => {
-      console.log('Window ready to show');
-      mainWindow.show();
+      console.log('Window ready-to-show event fired');
+      mainWindow.focus(); // ウィンドウにフォーカスを移す
     });
 
     // エラー処理
@@ -109,6 +113,19 @@ async function createWindow(): Promise<void> {
       console.error('Failed to load:', errorCode, errorDescription);
       dialog.showErrorBox('読み込みエラー', 
         `ページの読み込みに失敗しました:\n${errorDescription}`);
+    });
+
+    // デバッグ用イベントログ
+    mainWindow.webContents.on('did-start-loading', () => {
+      console.log('Started loading page');
+    });
+
+    mainWindow.webContents.on('did-finish-load', () => {
+      console.log('Finished loading page');
+    });
+
+    mainWindow.webContents.on('dom-ready', () => {
+      console.log('DOM is ready');
     });
 
     // ウィンドウが準備できたら起動時アップデートチェック
