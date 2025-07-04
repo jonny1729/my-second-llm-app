@@ -138,9 +138,19 @@ export function setupIpcHandlers(db: Database) {
     }
   });
 
-  ipcMain.handle('download-and-install-update', async () => {
+  ipcMain.handle('download-and-install-update', async (event) => {
     try {
       const updateManager = getUpdateManager();
+      
+      // プログレス通知のリスナーを設定
+      updateManager.on('download-progress', (progressInfo) => {
+        event.sender.send('update-progress', progressInfo);
+      });
+
+      updateManager.on('update-downloaded', (info) => {
+        event.sender.send('update-downloaded', info);
+      });
+
       await updateManager.downloadAndInstall();
       return true;
     } catch (error) {

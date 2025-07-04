@@ -2,6 +2,7 @@ import { app } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as https from 'https';
 
 // Fallback for when electron-updater is not available
 let autoUpdater: any = null;
@@ -18,6 +19,7 @@ export interface UpdateInfo {
   releaseDate: string;
   downloadSize: number;
   hasUpdate: boolean;
+  downloadUrl?: string;
 }
 
 export interface UpdateProgress {
@@ -41,6 +43,7 @@ export interface UpdateConfig {
 export class UpdateManager extends EventEmitter {
   private config: UpdateConfig;
   private updateCheckTimer: NodeJS.Timeout | null = null;
+  private latestUpdateInfo: UpdateInfo | null = null;
 
   constructor() {
     super();
@@ -223,6 +226,7 @@ export class UpdateManager extends EventEmitter {
       const release = await response.json();
       
       console.log(`Latest release: ${release.tag_name}, Current: ${currentVersion}`);
+      console.log('Release assets:', release.assets);
       
       // バージョン比較
       const latestVersion = release.tag_name.replace(/^v/, '');
@@ -230,22 +234,33 @@ export class UpdateManager extends EventEmitter {
       
       if (hasUpdate) {
         const downloadSize = release.assets?.[0]?.size || 0;
-        return {
+        const downloadUrl = release.assets?.[0]?.browser_download_url;
+        
+        console.log('Download URL:', downloadUrl);
+        
+        if (!downloadUrl) {
+          throw new Error('アップデートファイルのダウンロードURLが見つかりません');
+        }
+        
+        this.latestUpdateInfo = {
           version: latestVersion,
           releaseNotes: release.body || 'リリースノートがありません',
           releaseDate: release.published_at,
           downloadSize: downloadSize,
-          hasUpdate: true
+          hasUpdate: true,
+          downloadUrl: downloadUrl
         };
+        return this.latestUpdateInfo;
       }
       
-      return {
+      this.latestUpdateInfo = {
         version: latestVersion,
         releaseNotes: 'アップデートはありません',
         releaseDate: release.published_at,
         downloadSize: 0,
         hasUpdate: false
       };
+      return this.latestUpdateInfo;
       
     } catch (error) {
       console.error('GitHub update check failed:', error);
@@ -303,13 +318,13 @@ export class UpdateManager extends EventEmitter {
 
   public async downloadAndInstall(): Promise<void> {
     try {
-      if (!autoUpdater) {
-        throw new Error('Updates not available in this build');
+      if (!this.latestUpdateInfo) {
+        throw new Error('Please check update first');
       }
+      
       if (this.config.source === 'github') {
         await this.createBackup();
-        await autoUpdater.downloadUpdate();
-        // The update will be installed automatically after download
+        await this.downloadFromGitHub();
       } else if (this.config.source === 'local') {
         await this.installLocalUpdate();
       }
@@ -318,6 +333,66 @@ export class UpdateManager extends EventEmitter {
       this.emit('error', error);
       throw error;
     }
+  }
+
+  private async downloadFromGitHub(): Promise<void> {
+    if (!this.latestUpdateInfo?.downloadUrl) {
+      throw new Error('No download URL available');
+    }
+
+    const downloadUrl = this.latestUpdateInfo.downloadUrl;
+    const fileName = path.basename(downloadUrl);
+    const userDataPath = app.getPath('userData');
+    const downloadPath = path.join(userDataPath, 'updates', fileName);
+    
+    // Create updates directory if it doesn't exist
+    const updatesDir = path.join(userDataPath, 'updates');
+    if (!fs.existsSync(updatesDir)) {
+      fs.mkdirSync(updatesDir, { recursive: true });
+    }
+
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(downloadPath);
+      
+      https.get(downloadUrl, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Download failed with status code: ${response.statusCode}`));
+          return;
+        }
+
+        const totalSize = parseInt(response.headers['content-length'] || '0', 10);
+        let downloadedSize = 0;
+
+        response.on('data', (chunk) => {
+          downloadedSize += chunk.length;
+          if (totalSize > 0) {
+            const percent = Math.round((downloadedSize / totalSize) * 100);
+            this.emit('download-progress', {
+              percent,
+              total: totalSize,
+              transferred: downloadedSize,
+              bytesPerSecond: 0
+            });
+          }
+        });
+
+        response.pipe(file);
+
+        file.on('finish', () => {
+          file.close();
+          console.log(`Download completed: ${downloadPath}`);
+          this.emit('update-downloaded', { path: downloadPath });
+          resolve();
+        });
+
+        file.on('error', (err) => {
+          fs.unlink(downloadPath, () => {}); // Clean up on error
+          reject(err);
+        });
+      }).on('error', (err) => {
+        reject(err);
+      });
+    });
   }
 
   public installAndRestart(): void {

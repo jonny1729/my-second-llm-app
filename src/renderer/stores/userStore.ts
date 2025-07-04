@@ -16,6 +16,7 @@ interface UserStore {
   newLevel: number;
   loadUserStats: () => Promise<void>;
   gainExperience: (expAmount: number, description: string, sourceType: string, sourceId?: number) => Promise<boolean>;
+  addExperience: (sourceType: string, sourceId: number | null, expAmount: number, description: string) => Promise<void>;
   closeLevelUpModal: () => void;
 }
 
@@ -79,6 +80,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }
 
     return leveledUp;
+  },
+
+  addExperience: async (sourceType: string, sourceId: number | null, expAmount: number, description: string) => {
+    await get().gainExperience(expAmount, description, sourceType, sourceId || undefined);
   },
 
   closeLevelUpModal: () => {

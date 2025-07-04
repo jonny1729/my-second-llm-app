@@ -6,11 +6,12 @@ import GoalManager from './components/GoalManager';
 import Calendar from './components/Calendar';
 import Diary from './components/Diary';
 import Settings from './components/Settings';
+import PomodoroTimer from './components/PomodoroTimer';
 import LevelUpModal from './components/LevelUpModal';
 import UpdateNotification, { UpdateInfo, UpdateProgress } from './components/UpdateNotification';
 import { useUserStore } from './stores/userStore';
 
-type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'stats' | 'settings';
+type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'pomodoro' | 'stats' | 'settings';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
@@ -123,6 +124,8 @@ const App: React.FC = () => {
         return <Calendar />;
       case 'diary':
         return <Diary />;
+      case 'pomodoro':
+        return <PomodoroTimer />;
       case 'stats':
         return <div className="coming-soon">📊 統計機能は開発中です</div>;
       case 'settings':
@@ -187,6 +190,12 @@ const App: React.FC = () => {
                 onClick={() => setActivePage('diary')}
               >
                 📝 日記
+              </li>
+              <li 
+                className={activePage === 'pomodoro' ? 'active' : ''}
+                onClick={() => setActivePage('pomodoro')}
+              >
+                🍅 ポモドーロ
               </li>
               <li 
                 className={activePage === 'stats' ? 'active' : ''}

@@ -37,6 +37,7 @@ try {
       },
       on: (channel: string, callback: (...args: any[]) => void) => {
         console.log(`Mock IPC listener: ${channel}`);
+        // ブラウザモードでは即座にコールバックは呼ばれない
       },
       removeAllListeners: (channel: string) => {
         console.log(`Mock IPC remove listeners: ${channel}`);
@@ -164,6 +165,8 @@ declare global {
       invoke: (channel: string, ...args: any[]) => Promise<any>;
       on: (channel: string, callback: (...args: any[]) => void) => void;
       removeAllListeners: (channel: string) => void;
+      onUpdateProgress?: (callback: (progress: any) => void) => void;
+      onUpdateDownloaded?: (callback: () => void) => void;
     };
   }
 }
@@ -173,6 +176,16 @@ if (typeof window !== 'undefined') {
   window.electronAPI = {
     invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
     on: (channel: string, callback: (...args: any[]) => void) => ipcRenderer.on(channel, callback),
-    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel)
+    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
+    onUpdateProgress: (callback: (progress: any) => void) => {
+      if (ipcRenderer.on) {
+        ipcRenderer.on('update-progress', (_event: any, progress: any) => callback(progress));
+      }
+    },
+    onUpdateDownloaded: (callback: () => void) => {
+      if (ipcRenderer.on) {
+        ipcRenderer.on('update-downloaded', () => callback());
+      }
+    }
   };
 }

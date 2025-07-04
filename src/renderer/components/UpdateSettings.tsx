@@ -32,6 +32,11 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
   const [lastCheckTime, setLastCheckTime] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [updateResult, setUpdateResult] = useState<string | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<any>(null);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -98,8 +103,10 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
         
         if (result && result.hasUpdate) {
           setUpdateResult(`新しいバージョン v${result.version} が利用可能です！`);
+          setUpdateInfo(result);
         } else {
           setUpdateResult('最新バージョンです');
+          setUpdateInfo(null);
         }
       } else {
         // ブラウザモードでは外部コールバックを使用
@@ -113,6 +120,54 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
       setUpdateResult(`エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  const handleDownloadUpdate = async () => {
+    try {
+      setIsDownloading(true);
+      setDownloadProgress(0);
+      
+      if (window.electronAPI) {
+        // ダウンロード進捗リスナーを設定
+        window.electronAPI.onUpdateProgress?.((progress: any) => {
+          setDownloadProgress(Math.round(progress.percent || 0));
+        });
+
+        // ダウンロード完了リスナーを設定
+        window.electronAPI.onUpdateDownloaded?.(() => {
+          setIsDownloading(false);
+          setUpdateDownloaded(true);
+          setDownloadProgress(100);
+        });
+
+        await window.electronAPI.invoke('download-and-install-update');
+      } else {
+        // ブラウザモードでは進捗をシミュレート
+        for (let i = 0; i <= 100; i += 10) {
+          setDownloadProgress(i);
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        setIsDownloading(false);
+        setUpdateDownloaded(true);
+      }
+    } catch (error) {
+      console.error('アップデートダウンロードエラー:', error);
+      setUpdateResult(`ダウンロードエラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsDownloading(false);
+    }
+  };
+
+  const handleInstallAndRestart = async () => {
+    try {
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('install-and-restart');
+      } else {
+        alert('アプリが再起動されます（ブラウザモード）');
+      }
+    } catch (error) {
+      console.error('インストールエラー:', error);
+      alert('インストールに失敗しました');
     }
   };
 
@@ -384,6 +439,102 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
               <span className={`status-value ${updateResult.includes('エラー') ? 'error' : updateResult.includes('利用可能') ? 'update-available' : 'up-to-date'}`}>
                 {updateResult}
               </span>
+            </div>
+          )}
+
+          {updateInfo && updateInfo.hasUpdate && (
+            <div className="update-available-section">
+              <h4>🎉 新しいアップデートが利用可能です</h4>
+              <div className="update-details">
+                <div className="update-info-item">
+                  <span className="info-label">新バージョン:</span>
+                  <span className="info-value">v{updateInfo.version}</span>
+                </div>
+                <div className="update-info-item">
+                  <span className="info-label">リリース日:</span>
+                  <span className="info-value">
+                    {new Date(updateInfo.releaseDate).toLocaleDateString('ja-JP')}
+                  </span>
+                </div>
+                {updateInfo.downloadSize > 0 && (
+                  <div className="update-info-item">
+                    <span className="info-label">ダウンロードサイズ:</span>
+                    <span className="info-value">
+                      {(updateInfo.downloadSize / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {updateInfo.releaseNotes && updateInfo.releaseNotes !== 'リリースノートがありません' && (
+                <div className="release-notes-section">
+                  <button 
+                    className="release-notes-toggle"
+                    onClick={() => setShowReleaseNotes(!showReleaseNotes)}
+                  >
+                    📝 リリースノート {showReleaseNotes ? '▼' : '▶'}
+                  </button>
+                  {showReleaseNotes && (
+                    <div className="release-notes-content">
+                      <pre>{updateInfo.releaseNotes}</pre>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {isDownloading && (
+                <div className="download-progress-section">
+                  <h5>📥 アップデートをダウンロード中...</h5>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${downloadProgress}%` }}
+                    ></div>
+                  </div>
+                  <div className="progress-text">
+                    {downloadProgress}% 完了
+                  </div>
+                </div>
+              )}
+
+              {updateDownloaded && (
+                <div className="update-ready-section">
+                  <h5>✅ アップデートの準備完了</h5>
+                  <p>アップデートのダウンロードが完了しました。アプリを再起動してアップデートを適用します。</p>
+                  <div className="restart-actions">
+                    <button 
+                      className="btn-primary restart-btn"
+                      onClick={handleInstallAndRestart}
+                    >
+                      🔄 今すぐ再起動してアップデート
+                    </button>
+                    <button 
+                      className="btn-secondary" 
+                      onClick={() => {
+                        setUpdateDownloaded(false);
+                        setUpdateInfo(null);
+                      }}
+                    >
+                      後で再起動
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {!isDownloading && !updateDownloaded && (
+                <div className="update-actions">
+                  <button 
+                    className="btn-primary update-btn"
+                    onClick={handleDownloadUpdate}
+                    disabled={isDownloading}
+                  >
+                    ⬇️ アップデートをダウンロード
+                  </button>
+                  <button className="btn-secondary" onClick={() => setUpdateInfo(null)}>
+                    後で更新
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

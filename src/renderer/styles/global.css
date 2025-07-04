@@ -2119,3 +2119,179 @@ body {
 .settings-tab-content {
   min-height: 400px;
 }
+
+/* ポモドーロタイマーのスタイル */
+.pomodoro-timer {
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.timer-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.timer-header {
+  margin-bottom: 2rem;
+}
+
+.timer-header h2 {
+  color: #4a5568;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.session-count {
+  color: #718096;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.timer-display {
+  margin-bottom: 2rem;
+}
+
+.time-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 8px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.time-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  z-index: 1;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.timer-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  min-width: 120px;
+}
+
+.timer-btn.play,
+.timer-btn.pause {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.timer-btn.reset {
+  background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+}
+
+.timer-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.timer-btn:active {
+  transform: translateY(0);
+}
+
+.timer-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setting-group label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.setting-group input {
+  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.setting-group input:focus {
+  outline: none;
+  border-color: #5a67d8;
+  box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
+}
+
+.setting-group input:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+}
+
+/* 完了エフェクト */
+.completion-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.effect-content {
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.effect-emoji {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.effect-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.effect-exp {
+  font-size: 1.2rem;
+  color: #38a169;
+  font-weight: 600;
+}
