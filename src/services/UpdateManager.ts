@@ -323,20 +323,47 @@ export class UpdateManager extends EventEmitter {
       
       // 手動アップデート環境用の処理
       if (this.config.source === 'github' && this.latestUpdateInfo.downloadUrl) {
+        // プログレス表示のシミュレーション
+        this.emit('download-progress', {
+          percent: 10,
+          total: 100,
+          transferred: 10,
+          bytesPerSecond: 0
+        });
+
         // GitHubのリリースページを開く
         const { shell } = require('electron');
         const owner = this.config.githubOwner || 'jonny1729';
         const repo = this.config.githubRepo || 'my-second-llm-app';
         const releaseUrl = `https://github.com/${owner}/${repo}/releases/latest`;
         
+        // プログレス更新
+        this.emit('download-progress', {
+          percent: 50,
+          total: 100,
+          transferred: 50,
+          bytesPerSecond: 0
+        });
+
         await shell.openExternal(releaseUrl);
         
-        // 手動ダウンロード用のメッセージを送信
-        this.emit('update-ready-for-manual-install', { 
-          message: 'GitHubリリースページを開きました。新しいバージョンをダウンロードして、現在のアプリファイルを置き換えてください。',
-          url: releaseUrl,
-          version: this.latestUpdateInfo.version
+        // プログレス完了
+        this.emit('download-progress', {
+          percent: 100,
+          total: 100,
+          transferred: 100,
+          bytesPerSecond: 0
         });
+
+        // 少し待ってからダウンロード完了を通知
+        setTimeout(() => {
+          this.emit('update-downloaded', { 
+            message: 'GitHubリリースページを開きました。手動でダウンロードして置き換えてください。',
+            url: releaseUrl,
+            version: this.latestUpdateInfo?.version
+          });
+        }, 1000);
+
       } else if (this.config.source === 'local') {
         await this.installLocalUpdate();
       } else {

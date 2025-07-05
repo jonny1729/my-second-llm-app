@@ -149,7 +149,7 @@ export function setupIpcHandlers(db: Database) {
       
       // プログレス通知のリスナーを設定
       updateManager.on('download-progress', (progressInfo) => {
-        event.sender.send('update-progress', progressInfo);
+        event.sender.send('update-download-progress', progressInfo);
       });
 
       updateManager.on('update-downloaded', (info) => {
@@ -164,14 +164,5 @@ export function setupIpcHandlers(db: Database) {
     }
   });
 
-  ipcMain.handle('install-and-restart', async () => {
-    try {
-      const updateManager = getUpdateManager();
-      updateManager.installAndRestart();
-      return true;
-    } catch (error) {
-      console.error('インストール・再起動エラー:', error);
-      throw error;
-    }
-  });
+  // 【注意】: install-and-restart ハンドラーは updateHandler.ts で管理
 }

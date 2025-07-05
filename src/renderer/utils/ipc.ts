@@ -179,7 +179,7 @@ if (typeof window !== 'undefined') {
     removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
     onUpdateProgress: (callback: (progress: any) => void) => {
       if (ipcRenderer.on) {
-        ipcRenderer.on('update-progress', (_event: any, progress: any) => callback(progress));
+        ipcRenderer.on('update-download-progress', (_event: any, progress: any) => callback(progress));
       }
     },
     onUpdateDownloaded: (callback: () => void) => {

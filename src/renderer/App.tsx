@@ -12,6 +12,7 @@ import LevelUpModal from './components/LevelUpModal';
 import UpdateNotification, { UpdateInfo, UpdateProgress } from './components/UpdateNotification';
 import { useUserStore } from './stores/userStore';
 import { usePomodoroStore } from './stores/pomodoroStore';
+import { useUpdateStore } from './stores/updateStore';
 
 type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'pomodoro' | 'stats' | 'settings';
 
@@ -25,12 +26,21 @@ const App: React.FC = () => {
     setIsRunning, setShowPopup, resetTimer, formatTime
   } = usePomodoroStore();
   
-  // アップデート関連のstate
-  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [appVersion, setAppVersion] = useState<string>('');
+  // 【実装状況】: IMPLEMENTED (Phase3で修正)
+  // 【説明】: アップデート関連の状態をupdateStoreに統一
+  // 【依存関係】: useUpdateStore
+  const { 
+    showUpdateNotification, 
+    setShowUpdateNotification,
+    updateInfo, 
+    setUpdateInfo,
+    appVersion, 
+    setAppVersion,
+    isDownloading,
+    setIsDownloading
+  } = useUpdateStore();
 
-  // v1.2.5新機能: アプリバージョン取得
+  // v1.2.5新機能: アプリバージョン取得（updateStoreを使用）
   useEffect(() => {
     const loadAppVersion = async () => {
       try {
@@ -43,9 +53,10 @@ const App: React.FC = () => {
       }
     };
     loadAppVersion();
-  }, []);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState<UpdateProgress | null>(null);
+  }, [setAppVersion]);
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: downloadProgress状態をupdateStoreに移行
+  const { downloadProgress, setDownloadProgress } = useUpdateStore();
 
   useEffect(() => {
     loadUserStats();
@@ -69,19 +80,19 @@ const App: React.FC = () => {
 
       // ダウンロード進捗
       window.electronAPI.on('update-download-progress', (progress: UpdateProgress) => {
-        setDownloadProgress(progress);
+        setDownloadProgress(Math.round(progress.percent || 0));
       });
 
       // ダウンロード完了
       window.electronAPI.on('update-downloaded', () => {
         setIsDownloading(false);
-        setDownloadProgress(null);
+        setDownloadProgress(0);
       });
 
       // エラー
       window.electronAPI.on('update-error', (error: string) => {
         setIsDownloading(false);
-        setDownloadProgress(null);
+        setDownloadProgress(0);
         alert(`アップデートエラー: ${error}`);
       });
 
@@ -187,7 +198,7 @@ const App: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1>🎮 RPG秘書 - Personal Assistant {appVersion && <span style={{ fontSize: '14px', opacity: 0.7 }}>v{appVersion}</span>}</h1>
+        <h1>🎮 RPG秘書 - Personal Assistant {appVersion && <span style={{ fontSize: '14px', opacity: 0.7 }}>v{appVersion} ✨</span>}</h1>
         <div className="level-info">
           <span>レベル: {stats?.current_level || 1}</span>
           <div className="exp-bar">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useUpdateStore } from '../stores/updateStore';
 
 export interface UpdateConfig {
   enabled: boolean;
@@ -17,161 +18,125 @@ interface UpdateSettingsProps {
 }
 
 const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) => {
-  const [config, setConfig] = useState<UpdateConfig>({
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: UpdateSettings状態をupdateStoreに統一
+  // 【依存関係】: useUpdateStore
+  const {
+    updateConfig,
+    setUpdateConfig,
+    isLoading,
+    setIsLoading,
+    isSaving,
+    setIsSaving,
+    showGithubToken,
+    setShowGithubToken,
+    tempGithubToken,
+    setTempGithubToken,
+    lastCheckTime,
+    setLastCheckTime,
+    isChecking,
+    setIsChecking,
+    updateResult,
+    setUpdateResult,
+    updateInfo,
+    setUpdateInfo,
+    showReleaseNotes,
+    setShowReleaseNotes,
+    isDownloading,
+    setIsDownloading,
+    downloadProgress,
+    setDownloadProgress,
+    updateDownloaded,
+    setUpdateDownloaded,
+    appVersion,
+    // 非同期アクション
+    checkForUpdates,
+    downloadAndInstall,
+    loadConfig,
+    saveConfig
+  } = useUpdateStore();
+  
+  // 【実装状況】: LOCAL CONFIG STATE
+  // 【説明】: updateConfigがnullの場合のデフォルト値を管理
+  const config = updateConfig || {
     enabled: true,
     autoCheck: true,
-    checkInterval: 'weekly',
-    source: 'github',
+    checkInterval: 'weekly' as const,
+    source: 'github' as const,
     githubOwner: 'username',
     githubRepo: 'rpg-task-manager'
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showGithubToken, setShowGithubToken] = useState(false);
-  const [tempGithubToken, setTempGithubToken] = useState('');
-  const [lastCheckTime, setLastCheckTime] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
-  const [updateResult, setUpdateResult] = useState<string | null>(null);
-  const [updateInfo, setUpdateInfo] = useState<any>(null);
-  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [updateDownloaded, setUpdateDownloaded] = useState(false);
-  const [currentVersion, setCurrentVersion] = useState<string>('');
+  };
 
   useEffect(() => {
     loadConfig();
-    loadCurrentVersion();
-  }, []);
+  }, [loadConfig]);
 
-  const loadConfig = async () => {
-    try {
-      setIsLoading(true);
-      if (window.electronAPI) {
-        const savedConfig = await window.electronAPI.invoke('get-update-config');
-        if (savedConfig) {
-          setConfig(savedConfig);
-          if (savedConfig.githubToken) {
-            setTempGithubToken(''); // トークンは表示しない
-          }
-        }
-      }
-      setLastCheckTime(new Date().toISOString());
-    } catch (error) {
-      console.error('設定の読み込みに失敗:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: イベントリスナーはApp.tsxで統一管理されるように変更
+  // 【依存関係】: updateStoreの状態を直接使用
 
-  const loadCurrentVersion = async () => {
-    try {
-      if (window.electronAPI) {
-        const version = await window.electronAPI.invoke('get-app-version');
-        setCurrentVersion(version);
-      } else {
-        // ブラウザモードの場合は固定値
-        setCurrentVersion('1.0.0');
-      }
-    } catch (error) {
-      console.error('バージョン情報の取得に失敗:', error);
-      setCurrentVersion('不明');
-    }
-  };
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: loadConfigはupdateStoreの非同期アクションを使用
 
-  const saveConfig = async () => {
+  // 【実装状況】: REMOVED
+  // 【説明】: appVersionはupdateStoreから取得するように変更
+
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: saveConfigはupdateStoreの非同期アクションを使用
+  const handleSaveConfig = async () => {
     try {
-      setIsSaving(true);
-      if (window.electronAPI) {
-        await window.electronAPI.invoke('update-update-config', config);
-        alert('設定が保存されました');
-      } else {
-        console.log('設定保存:', config);
-        alert('設定が保存されました（ブラウザモード）');
-      }
+      await saveConfig();
+      alert('設定が保存されました');
     } catch (error) {
-      console.error('設定の保存に失敗:', error);
       alert('設定の保存に失敗しました');
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  const updateConfig = (updates: Partial<UpdateConfig>) => {
-    setConfig(prev => ({ ...prev, ...updates }));
+  const updateConfigLocal = (updates: Partial<UpdateConfig>) => {
+    const newConfig = { ...config, ...updates };
+    setUpdateConfig(newConfig);
   };
 
   const handleGithubTokenUpdate = () => {
     if (tempGithubToken.trim()) {
-      updateConfig({ githubToken: tempGithubToken.trim() });
+      updateConfigLocal({ githubToken: tempGithubToken.trim() });
       setTempGithubToken('');
       alert('GitHubトークンが設定されました');
     }
   };
 
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: checkForUpdatesはupdateStoreの非同期アクションを使用
   const handleCheckForUpdates = async () => {
-    try {
-      setIsChecking(true);
-      setUpdateResult(null);
-      
-      if (window.electronAPI) {
-        const result = await window.electronAPI.invoke('check-for-updates');
-        setLastCheckTime(new Date().toISOString());
-        
-        if (result && result.hasUpdate) {
-          setUpdateResult(`新しいバージョン v${result.version} が利用可能です！`);
-          setUpdateInfo(result);
-        } else {
-          setUpdateResult('最新バージョンです');
-          setUpdateInfo(null);
-        }
-      } else {
-        // ブラウザモードでは外部コールバックを使用
-        if (onCheckForUpdates) {
-          onCheckForUpdates();
-        }
-        setUpdateResult('アップデートチェック完了（ブラウザモード）');
+    if (window.electronAPI) {
+      await checkForUpdates();
+    } else {
+      // ブラウザモードでは外部コールバックを使用
+      if (onCheckForUpdates) {
+        onCheckForUpdates();
       }
-    } catch (error) {
-      console.error('アップデートチェックエラー:', error);
-      setUpdateResult(`エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsChecking(false);
+      setUpdateResult('アップデートチェック完了（ブラウザモード）');
     }
   };
 
+  // 【実装状況】: IMPLEMENTED
+  // 【説明】: アップデートダウンロード処理（Phase2で修正済み）
+  // 【依存関係】: window.electronAPI.invoke('download-and-install-update')
+  // 【今後の課題】: エラーハンドリングの強化
+  // 【実装状況】: MIGRATED TO STORE
+  // 【説明】: downloadAndInstallはupdateStoreの非同期アクションを使用
   const handleDownloadUpdate = async () => {
-    try {
+    if (window.electronAPI) {
+      await downloadAndInstall();
+    } else {
+      // ブラウザモードでは進捗をシミュレート
       setIsDownloading(true);
-      setDownloadProgress(0);
-      
-      if (window.electronAPI) {
-        // ダウンロード進捗リスナーを設定
-        window.electronAPI.onUpdateProgress?.((progress: any) => {
-          setDownloadProgress(Math.round(progress.percent || 0));
-        });
-
-        // ダウンロード完了リスナーを設定
-        window.electronAPI.onUpdateDownloaded?.(() => {
-          setIsDownloading(false);
-          setUpdateDownloaded(true);
-          setDownloadProgress(100);
-        });
-
-        await window.electronAPI.invoke('download-and-install-update');
-      } else {
-        // ブラウザモードでは進捗をシミュレート
-        for (let i = 0; i <= 100; i += 10) {
-          setDownloadProgress(i);
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-        setIsDownloading(false);
-        setUpdateDownloaded(true);
+      for (let i = 0; i <= 100; i += 10) {
+        setDownloadProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
-    } catch (error) {
-      console.error('アップデートダウンロードエラー:', error);
-      setUpdateResult(`ダウンロードエラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsDownloading(false);
+      setUpdateDownloaded(true);
     }
   };
 
@@ -228,7 +193,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
               <input
                 type="checkbox"
                 checked={config.enabled}
-                onChange={(e) => updateConfig({ enabled: e.target.checked })}
+                onChange={(e) => updateConfigLocal({ enabled: e.target.checked })}
               />
               <span>自動アップデート機能を有効にする</span>
             </div>
@@ -240,7 +205,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
               <input
                 type="checkbox"
                 checked={config.autoCheck}
-                onChange={(e) => updateConfig({ autoCheck: e.target.checked })}
+                onChange={(e) => updateConfigLocal({ autoCheck: e.target.checked })}
                 disabled={!config.enabled}
               />
               <span>起動時に新しいバージョンをチェック</span>
@@ -252,7 +217,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
             <div className="setting-control">
               <select
                 value={config.checkInterval}
-                onChange={(e) => updateConfig({ checkInterval: e.target.value as any })}
+                onChange={(e) => updateConfigLocal({ checkInterval: e.target.value as any })}
                 disabled={!config.enabled || !config.autoCheck}
                 className="interval-select"
               >
@@ -281,7 +246,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
               name="updateSource"
               value="github"
               checked={config.source === 'github'}
-              onChange={(e) => updateConfig({ source: 'github' })}
+              onChange={(e) => updateConfigLocal({ source: 'github' })}
             />
             <label htmlFor="github-source" className="source-label">
               <div className="source-header">
@@ -300,7 +265,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
               name="updateSource"
               value="local"
               checked={config.source === 'local'}
-              onChange={(e) => updateConfig({ source: 'local' })}
+              onChange={(e) => updateConfigLocal({ source: 'local' })}
             />
             <label htmlFor="local-source" className="source-label">
               <div className="source-header">
@@ -335,7 +300,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
                   type="text"
                   placeholder="ユーザー名/組織名"
                   value={config.githubOwner || ''}
-                  onChange={(e) => updateConfig({ githubOwner: e.target.value })}
+                  onChange={(e) => updateConfigLocal({ githubOwner: e.target.value })}
                   className="repo-input"
                 />
                 <span className="repo-separator">/</span>
@@ -343,7 +308,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
                   type="text"
                   placeholder="リポジトリ名"
                   value={config.githubRepo || ''}
-                  onChange={(e) => updateConfig({ githubRepo: e.target.value })}
+                  onChange={(e) => updateConfigLocal({ githubRepo: e.target.value })}
                   className="repo-input"
                 />
               </div>
@@ -422,7 +387,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
                   type="text"
                   placeholder="./updates"
                   value={config.localPath || ''}
-                  onChange={(e) => updateConfig({ localPath: e.target.value })}
+                  onChange={(e) => updateConfigLocal({ localPath: e.target.value })}
                   className="path-input"
                 />
                 <button className="btn-secondary">参照</button>
@@ -447,7 +412,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
           
           <div className="status-item">
             <span className="status-label">現在のバージョン:</span>
-            <span className="status-value" style={{ color: '#4ECDC4', fontWeight: 'bold' }}>v{currentVersion}</span>
+            <span className="status-value" style={{ color: '#4ECDC4', fontWeight: 'bold' }}>v{appVersion}</span>
           </div>
 
           {/* v1.2.5新機能: 最新バージョンメッセージ */}
@@ -583,7 +548,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
             
             <button
               className="btn-secondary"
-              onClick={saveConfig}
+              onClick={handleSaveConfig}
               disabled={isSaving}
             >
               <span className="btn-icon">💾</span>

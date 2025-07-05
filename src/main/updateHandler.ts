@@ -55,51 +55,21 @@ export class UpdateHandler {
   }
 
   private setupIpcHandlers() {
-    // アップデートチェック
-    ipcMain.handle('check-for-updates', async () => {
-      try {
-        return await this.updateManager.checkForUpdates();
-      } catch (error) {
-        console.error('Manual update check failed:', error);
-        throw error;
-      }
-    });
-
-    // アップデートのダウンロードとインストール
-    ipcMain.handle('download-and-install-update', async () => {
-      try {
-        await this.updateManager.downloadAndInstall();
-        return true;
-      } catch (error) {
-        console.error('Download and install failed:', error);
-        throw error;
-      }
-    });
-
-    // アップデート設定の取得
-    ipcMain.handle('get-update-config', () => {
-      return this.updateManager.getConfig();
-    });
-
-    // アップデート設定の更新
-    ipcMain.handle('update-update-config', (event, config) => {
-      this.updateManager.updateConfig(config);
-      return true;
-    });
-
+    // 【実装状況】: IMPLEMENTED
+    // 【説明】: updateHandler独自のIPCハンドラー
+    // 【注意】: 重複ハンドラーはipc-handlers.tsに統一済み
+    
     // 最後のアップデートチェック時間を取得
     ipcMain.handle('get-last-update-check', () => {
-      // 実装時にはConfigファイルから取得
+      // 【実装状況】: PARTIAL - 固定値を返している
+      // 【今後の課題】: ConfigファイルまたはUpdateManagerから実際の値を取得
       return new Date().toISOString();
     });
 
-    // アプリのバージョンを取得
-    ipcMain.handle('get-app-version', () => {
-      return app.getVersion();
-    });
-
-    // アップデート後の再起動
-    ipcMain.handle('restart-and-install-update', () => {
+    // アップデート後の再起動（統一名: install-and-restart）
+    ipcMain.handle('install-and-restart', () => {
+      // 【実装状況】: IMPLEMENTED
+      // 【依存関係】: UpdateManager.installAndRestart()
       this.updateManager.installAndRestart();
     });
 
@@ -192,14 +162,12 @@ export class UpdateHandler {
   public destroy() {
     this.updateManager.destroy();
     
-    // IPCハンドラーを削除
-    ipcMain.removeAllListeners('check-for-updates');
-    ipcMain.removeAllListeners('download-and-install-update');
-    ipcMain.removeAllListeners('get-update-config');
-    ipcMain.removeAllListeners('update-update-config');
+    // 【実装状況】: IMPLEMENTED  
+    // 【説明】: updateHandler独自のIPCハンドラーのクリーンアップ
+    // 【注意】: 重複ハンドラーは削除済み、ipc-handlers.tsで管理されるものは除外
+    
     ipcMain.removeAllListeners('get-last-update-check');
-    ipcMain.removeAllListeners('get-app-version');
-    ipcMain.removeAllListeners('restart-and-install-update');
+    ipcMain.removeAllListeners('install-and-restart');
     ipcMain.removeAllListeners('open-external-link');
     ipcMain.removeAllListeners('show-update-notification');
     ipcMain.removeAllListeners('open-folder-dialog');

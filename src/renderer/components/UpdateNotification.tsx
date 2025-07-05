@@ -20,7 +20,7 @@ interface UpdateNotificationProps {
   isVisible: boolean;
   updateInfo: UpdateInfo | null;
   isDownloading: boolean;
-  downloadProgress: UpdateProgress | null;
+  downloadProgress: number | UpdateProgress | null;
   onInstallNow: () => void;
   onInstallLater: () => void;
   onClose: () => void;
@@ -120,7 +120,7 @@ const UpdateNotification: React.FC<UpdateNotificationProps> = ({
             </div>
 
             {/* Download Progress */}
-            {isDownloading && downloadProgress && (
+            {isDownloading && downloadProgress !== null && (
               <motion.div
                 className="download-progress-section"
                 initial={{ opacity: 0, height: 0 }}
@@ -129,22 +129,26 @@ const UpdateNotification: React.FC<UpdateNotificationProps> = ({
               >
                 <div className="progress-header">
                   <span>🔄 アップデート中...</span>
-                  <span className="progress-percentage">{Math.round(downloadProgress.percent)}%</span>
+                  <span className="progress-percentage">
+                    {typeof downloadProgress === 'number' ? downloadProgress : Math.round(downloadProgress.percent)}%
+                  </span>
                 </div>
                 <div className="progress-bar">
                   <motion.div
                     className="progress-fill"
                     initial={{ width: '0%' }}
-                    animate={{ width: `${downloadProgress.percent}%` }}
+                    animate={{ width: `${typeof downloadProgress === 'number' ? downloadProgress : downloadProgress.percent}%` }}
                     transition={{ duration: 0.3 }}
                   />
                 </div>
-                <div className="progress-details">
-                  <span>⏱️ 速度: {formatSpeed(downloadProgress.bytesPerSecond)}</span>
-                  <span>
-                    📊 {formatFileSize(downloadProgress.transferred)} / {formatFileSize(downloadProgress.total)}
-                  </span>
-                </div>
+                {typeof downloadProgress === 'object' && (
+                  <div className="progress-details">
+                    <span>⏱️ 速度: {formatSpeed(downloadProgress.bytesPerSecond)}</span>
+                    <span>
+                      📊 {formatFileSize(downloadProgress.transferred)} / {formatFileSize(downloadProgress.total)}
+                    </span>
+                  </div>
+                )}
               </motion.div>
             )}
 
