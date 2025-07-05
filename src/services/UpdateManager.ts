@@ -321,15 +321,32 @@ export class UpdateManager extends EventEmitter {
         throw new Error('Please check update first');
       }
       
+      console.log('Starting download and install process...');
+      
       // 手動アップデート環境用の処理
-      if (this.config.source === 'github' && this.latestUpdateInfo.downloadUrl) {
-        // プログレス表示のシミュレーション
-        this.emit('download-progress', {
-          percent: 10,
-          total: 100,
-          transferred: 10,
-          bytesPerSecond: 0
-        });
+      if (this.config.source === 'github') {
+        console.log('GitHub source detected, starting progressive download...');
+        
+        // 段階的な進捗表示（適切な待機時間付き）
+        this.emit('download-progress', { percent: 0, total: 100, transferred: 0, bytesPerSecond: 0 });
+        console.log('Progress: 0%');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        this.emit('download-progress', { percent: 15, total: 100, transferred: 15, bytesPerSecond: 0 });
+        console.log('Progress: 15%');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        this.emit('download-progress', { percent: 35, total: 100, transferred: 35, bytesPerSecond: 0 });
+        console.log('Progress: 35%');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        this.emit('download-progress', { percent: 60, total: 100, transferred: 60, bytesPerSecond: 0 });
+        console.log('Progress: 60%');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        this.emit('download-progress', { percent: 85, total: 100, transferred: 85, bytesPerSecond: 0 });
+        console.log('Progress: 85%');
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // GitHubのリリースページを開く
         const { shell } = require('electron');
@@ -337,36 +354,27 @@ export class UpdateManager extends EventEmitter {
         const repo = this.config.githubRepo || 'my-second-llm-app';
         const releaseUrl = `https://github.com/${owner}/${repo}/releases/latest`;
         
-        // プログレス更新
-        this.emit('download-progress', {
-          percent: 50,
-          total: 100,
-          transferred: 50,
-          bytesPerSecond: 0
-        });
-
+        console.log('Opening GitHub release page:', releaseUrl);
         await shell.openExternal(releaseUrl);
         
-        // プログレス完了
-        this.emit('download-progress', {
-          percent: 100,
-          total: 100,
-          transferred: 100,
-          bytesPerSecond: 0
-        });
+        // 最終段階
+        this.emit('download-progress', { percent: 100, total: 100, transferred: 100, bytesPerSecond: 0 });
+        console.log('Progress: 100%');
 
         // 少し待ってからダウンロード完了を通知
         setTimeout(() => {
+          console.log('Emitting update-downloaded event');
           this.emit('update-downloaded', { 
             message: 'GitHubリリースページを開きました。手動でダウンロードして置き換えてください。',
             url: releaseUrl,
             version: this.latestUpdateInfo?.version
           });
-        }, 1000);
+        }, 1500);
 
       } else if (this.config.source === 'local') {
         await this.installLocalUpdate();
       } else {
+        console.log('No valid source found, throwing error');
         throw new Error('Download URL not available');
       }
     } catch (error) {
