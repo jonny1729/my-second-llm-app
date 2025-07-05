@@ -526,14 +526,20 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
 
               {updateDownloaded && (
                 <div className="update-ready-section">
-                  <h5>✅ アップデートの準備完了</h5>
-                  <p>アップデートのダウンロードが完了しました。アプリを再起動してアップデートを適用します。</p>
+                  <h5>📥 手動アップデート手順</h5>
+                  <p>GitHubリリースページを開きました。以下の手順でアップデートしてください：</p>
+                  <ol style={{ textAlign: 'left', margin: '10px 0', paddingLeft: '20px' }}>
+                    <li>新しいバージョンのファイルをダウンロード</li>
+                    <li>現在のアプリを終了</li>
+                    <li>ダウンロードしたファイルでアプリを置き換え</li>
+                    <li>新しいバージョンでアプリを起動</li>
+                  </ol>
                   <div className="restart-actions">
                     <button 
                       className="btn-primary restart-btn"
                       onClick={handleInstallAndRestart}
                     >
-                      🔄 今すぐ再起動してアップデート
+                      🔄 アプリを再起動（手動置き換え後）
                     </button>
                     <button 
                       className="btn-secondary" 
@@ -542,7 +548,7 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
                         setUpdateInfo(null);
                       }}
                     >
-                      後で再起動
+                      後で実行
                     </button>
                   </div>
                 </div>

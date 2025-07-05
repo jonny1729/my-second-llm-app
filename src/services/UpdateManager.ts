@@ -321,7 +321,7 @@ export class UpdateManager extends EventEmitter {
         throw new Error('Please check update first');
       }
       
-      // 現在はダウンロードリンクを提供するのみ
+      // 手動アップデート環境用の処理
       if (this.config.source === 'github' && this.latestUpdateInfo.downloadUrl) {
         // GitHubのリリースページを開く
         const { shell } = require('electron');
@@ -331,9 +331,11 @@ export class UpdateManager extends EventEmitter {
         
         await shell.openExternal(releaseUrl);
         
-        this.emit('update-downloaded', { 
-          message: 'GitHubリリースページを開きました。手動でダウンロードしてください。',
-          url: releaseUrl 
+        // 手動ダウンロード用のメッセージを送信
+        this.emit('update-ready-for-manual-install', { 
+          message: 'GitHubリリースページを開きました。新しいバージョンをダウンロードして、現在のアプリファイルを置き換えてください。',
+          url: releaseUrl,
+          version: this.latestUpdateInfo.version
         });
       } else if (this.config.source === 'local') {
         await this.installLocalUpdate();
@@ -409,13 +411,22 @@ export class UpdateManager extends EventEmitter {
 
   public installAndRestart(): void {
     try {
+      // 手動アップデート環境では単純にアプリを再起動
       if (!autoUpdater) {
-        throw new Error('Updates not available in this build');
+        console.log('Manual update mode: restarting app');
+        app.relaunch();
+        app.exit(0);
+        return;
       }
+      
+      // electron-updaterが利用可能な場合
       autoUpdater.quitAndInstall(false, true);
     } catch (error) {
       console.error('Install and restart failed:', error);
-      this.emit('error', error);
+      // エラーの場合でも再起動を試行
+      console.log('Fallback: restarting app manually');
+      app.relaunch();
+      app.exit(0);
     }
   }
 
