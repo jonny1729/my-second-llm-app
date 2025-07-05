@@ -28,6 +28,22 @@ const App: React.FC = () => {
   // アップデート関連のstate
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [appVersion, setAppVersion] = useState<string>('');
+
+  // v1.2.5新機能: アプリバージョン取得
+  useEffect(() => {
+    const loadAppVersion = async () => {
+      try {
+        if (window.electronAPI) {
+          const version = await window.electronAPI.invoke('get-app-version');
+          setAppVersion(version);
+        }
+      } catch (error) {
+        console.error('バージョン取得エラー:', error);
+      }
+    };
+    loadAppVersion();
+  }, []);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<UpdateProgress | null>(null);
 
@@ -171,7 +187,7 @@ const App: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1>🎮 RPG秘書 - Personal Assistant</h1>
+        <h1>🎮 RPG秘書 - Personal Assistant {appVersion && <span style={{ fontSize: '14px', opacity: 0.7 }}>v{appVersion}</span>}</h1>
         <div className="level-info">
           <span>レベル: {stats?.current_level || 1}</span>
           <div className="exp-bar">

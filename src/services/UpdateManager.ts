@@ -210,6 +210,9 @@ export class UpdateManager extends EventEmitter {
         headers['Authorization'] = `token ${this.config.githubToken}`;
       }
       
+      // レート制限を避けるため、少し待機
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const response = await fetch(apiUrl, { headers });
       
       if (!response.ok) {
@@ -238,17 +241,13 @@ export class UpdateManager extends EventEmitter {
         
         console.log('Download URL:', downloadUrl);
         
-        if (!downloadUrl) {
-          throw new Error('アップデートファイルのダウンロードURLが見つかりません');
-        }
-        
         this.latestUpdateInfo = {
           version: latestVersion,
           releaseNotes: release.body || 'リリースノートがありません',
           releaseDate: release.published_at,
           downloadSize: downloadSize,
           hasUpdate: true,
-          downloadUrl: downloadUrl
+          downloadUrl: downloadUrl || `https://github.com/${owner}/${repo}/releases/latest`
         };
         return this.latestUpdateInfo;
       }
@@ -322,11 +321,24 @@ export class UpdateManager extends EventEmitter {
         throw new Error('Please check update first');
       }
       
-      if (this.config.source === 'github') {
-        await this.createBackup();
-        await this.downloadFromGitHub();
+      // 現在はダウンロードリンクを提供するのみ
+      if (this.config.source === 'github' && this.latestUpdateInfo.downloadUrl) {
+        // GitHubのリリースページを開く
+        const { shell } = require('electron');
+        const owner = this.config.githubOwner || 'jonny1729';
+        const repo = this.config.githubRepo || 'my-second-llm-app';
+        const releaseUrl = `https://github.com/${owner}/${repo}/releases/latest`;
+        
+        await shell.openExternal(releaseUrl);
+        
+        this.emit('update-downloaded', { 
+          message: 'GitHubリリースページを開きました。手動でダウンロードしてください。',
+          url: releaseUrl 
+        });
       } else if (this.config.source === 'local') {
         await this.installLocalUpdate();
+      } else {
+        throw new Error('Download URL not available');
       }
     } catch (error) {
       console.error('Download and install failed:', error);

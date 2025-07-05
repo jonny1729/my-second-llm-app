@@ -36,7 +36,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
+        setTimeLeft((prev: number) => {
           if (prev <= 1) {
             handleTimerComplete();
             return 0;
@@ -72,7 +72,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
     if (mode === 'work') {
       const expGained = 20; // 25分作業で20EXP
       addExperience('pomodoro', null, expGained, 'ポモドーロセッション完了');
-      setSessions(prev => prev + 1);
+      setSessions((prev: number) => prev + 1);
     }
     
     // 次のモードに切り替え

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, app } from 'electron';
 import Database from '../database/database';
 import { getUpdateManager } from '../services/UpdateManager';
 
@@ -6,6 +6,11 @@ let database: Database;
 
 export function setupIpcHandlers(db: Database) {
   database = db;
+
+  // アプリケーション情報関連
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+  });
 
   // ユーザー統計関連
   ipcMain.handle('get-user-stats', async () => {

@@ -37,9 +37,11 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState<string>('');
 
   useEffect(() => {
     loadConfig();
+    loadCurrentVersion();
   }, []);
 
   const loadConfig = async () => {
@@ -59,6 +61,21 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
       console.error('設定の読み込みに失敗:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCurrentVersion = async () => {
+    try {
+      if (window.electronAPI) {
+        const version = await window.electronAPI.invoke('get-app-version');
+        setCurrentVersion(version);
+      } else {
+        // ブラウザモードの場合は固定値
+        setCurrentVersion('1.0.0');
+      }
+    } catch (error) {
+      console.error('バージョン情報の取得に失敗:', error);
+      setCurrentVersion('不明');
     }
   };
 
@@ -430,8 +447,18 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
           
           <div className="status-item">
             <span className="status-label">現在のバージョン:</span>
-            <span className="status-value">v1.1.0</span>
+            <span className="status-value" style={{ color: '#4ECDC4', fontWeight: 'bold' }}>v{currentVersion}</span>
           </div>
+
+          {/* v1.2.5新機能: 最新バージョンメッセージ */}
+          {updateResult && !updateResult.includes('エラー') && !updateResult.includes('利用可能') && (
+            <div className="status-item">
+              <span className="status-label">状態:</span>
+              <span className="status-value" style={{ color: '#38a169', fontWeight: 'bold' }}>
+                ✨ 最新バージョンです！
+              </span>
+            </div>
+          )}
 
           {updateResult && (
             <div className="status-item">

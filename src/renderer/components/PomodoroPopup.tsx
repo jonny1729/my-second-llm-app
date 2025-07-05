@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePomodoroStore } from '../stores/pomodoroStore';
 
 interface PomodoroPopupProps {
   isVisible: boolean;

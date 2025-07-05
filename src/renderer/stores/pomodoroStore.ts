@@ -21,9 +21,9 @@ interface PomodoroState {
   setShortBreakTime: (time: number) => void;
   setLongBreakTime: (time: number) => void;
   setMode: (mode: TimerMode) => void;
-  setTimeLeft: (time: number) => void;
+  setTimeLeft: (time: number | ((prev: number) => number)) => void;
   setIsRunning: (running: boolean) => void;
-  setSessions: (sessions: number) => void;
+  setSessions: (sessions: number | ((prev: number) => number)) => void;
   setAutoStart: (autoStart: boolean) => void;
   setShowPopup: (show: boolean) => void;
   
@@ -74,9 +74,13 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   },
   
   setMode: (mode) => set({ mode }),
-  setTimeLeft: (time) => set({ timeLeft: time }),
+  setTimeLeft: (time) => set((state) => ({ 
+    timeLeft: typeof time === 'function' ? time(state.timeLeft) : time 
+  })),
   setIsRunning: (running) => set({ isRunning: running }),
-  setSessions: (sessions) => set({ sessions }),
+  setSessions: (sessions) => set((state) => ({ 
+    sessions: typeof sessions === 'function' ? sessions(state.sessions) : sessions 
+  })),
   setAutoStart: (autoStart) => set({ autoStart }),
   setShowPopup: (show) => set({ showPopup: show }),
   

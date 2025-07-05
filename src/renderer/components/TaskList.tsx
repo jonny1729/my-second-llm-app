@@ -19,6 +19,11 @@ const TaskList: React.FC = () => {
     expAmount: 0,
     position: { x: 0, y: 0 }
   });
+  const [celebrationMessage, setCelebrationMessage] = useState({
+    isVisible: false,
+    message: '',
+    position: { x: 0, y: 0 }
+  });
 
   useEffect(() => {
     loadTasks();
@@ -48,6 +53,27 @@ const TaskList: React.FC = () => {
     alert('APIキーを設定すると、AIがあなたの目標に基づいてタスクを提案してくれます！');
   };
 
+  // v1.2.5新機能: 強化された祝福メッセージ
+  const celebrationMessages = [
+    '🎉 素晴らしい！',
+    '✨ よくやった！',
+    '🌟 完璧だ！',
+    '🎊 お疲れ様！',
+    '💫 最高！',
+    '🔥 やったね！',
+    '⚡ 素晴らしい成果！',
+    '🎯 ターゲット達成！',
+    '🚀 順調に進んでいる！',
+    '💪 頑張った！'
+  ];
+
+  const getCelebrationMessage = (completedCount: number) => {
+    if (completedCount > 0 && completedCount % 5 === 0) {
+      return `🏆 ${completedCount}個のタスクを達成！すごい！`;
+    }
+    return celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
+  };
+
   const handleCompleteTask = async (taskId: number, event: React.MouseEvent<HTMLButtonElement>) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -65,6 +91,24 @@ const TaskList: React.FC = () => {
       expAmount: task.exp_reward,
       position
     });
+
+    // v1.2.5新機能: 祝福メッセージ表示
+    const completedTasks = tasks.filter(t => t.is_completed).length + 1;
+    const celebrationPos = {
+      x: position.x + 50,
+      y: position.y - 30
+    };
+    
+    setCelebrationMessage({
+      isVisible: true,
+      message: getCelebrationMessage(completedTasks),
+      position: celebrationPos
+    });
+
+    // 3秒後に祝福メッセージを非表示
+    setTimeout(() => {
+      setCelebrationMessage(prev => ({ ...prev, isVisible: false }));
+    }, 3000);
 
     // タスク完了処理
     await completeTaskById(taskId);
@@ -248,6 +292,36 @@ const TaskList: React.FC = () => {
         position={expAnimation.position}
         onComplete={() => setExpAnimation({ ...expAnimation, isVisible: false })}
       />
+
+      {/* v1.2.5新機能: 祝福メッセージアニメーション */}
+      <AnimatePresence>
+        {celebrationMessage.isVisible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5, y: 0 }}
+            animate={{ opacity: 1, scale: 1, y: -20 }}
+            exit={{ opacity: 0, scale: 0.5, y: -40 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            style={{
+              position: 'fixed',
+              left: celebrationMessage.position.x,
+              top: celebrationMessage.position.y,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 1000,
+              pointerEvents: 'none',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#FFD700',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              background: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.5))'
+            }}
+          >
+            {celebrationMessage.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
