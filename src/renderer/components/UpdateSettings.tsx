@@ -425,6 +425,16 @@ const UpdateSettings: React.FC<UpdateSettingsProps> = ({ onCheckForUpdates }) =>
             </div>
           )}
 
+          {/* v1.2.9新機能: アップデート機能完成記念 */}
+          {appVersion === '1.2.8' && (
+            <div className="status-item">
+              <span className="status-label">🎉 特別メッセージ:</span>
+              <span className="status-value" style={{ color: '#e53e3e', fontWeight: 'bold' }}>
+                アップデート機能完成おめでとうございます！🚀
+              </span>
+            </div>
+          )}
+
           {updateResult && (
             <div className="status-item">
               <span className="status-label">チェック結果:</span>
