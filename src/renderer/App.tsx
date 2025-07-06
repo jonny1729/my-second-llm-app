@@ -24,7 +24,7 @@ const App: React.FC = () => {
   // Pomodoro store for popup functionality
   const {
     mode, timeLeft, isRunning, sessions, showPopup,
-    setIsRunning, setShowPopup, resetTimer, formatTime
+    setIsRunning, setShowPopup, resetTimer, formatTime, toggleTimer
   } = usePomodoroStore();
   
   // 【実装状況】: IMPLEMENTED (Phase3で修正)
@@ -150,7 +150,7 @@ const App: React.FC = () => {
 
   // Pomodoro popup handlers
   const handlePomodoroToggle = () => {
-    setIsRunning(!isRunning);
+    toggleTimer();
   };
 
   const handlePomodoroReset = () => {

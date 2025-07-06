@@ -1,6 +1,6 @@
 {
   "name": "rpg-task-manager",
-  "version": "1.2.18",
+  "version": "1.2.19",
   "main": "dist/main/main.js",
   "homepage": "https://github.com/jonny1729/my-second-llm-app",
   "scripts": {

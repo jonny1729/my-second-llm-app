@@ -16,6 +16,9 @@ interface PomodoroState {
   autoStart: boolean;
   showPopup: boolean;
   
+  // タイマー制御
+  intervalId: NodeJS.Timeout | null;
+  
   // アクション
   setWorkTime: (time: number) => void;
   setShortBreakTime: (time: number) => void;
@@ -26,6 +29,14 @@ interface PomodoroState {
   setSessions: (sessions: number | ((prev: number) => number)) => void;
   setAutoStart: (autoStart: boolean) => void;
   setShowPopup: (show: boolean) => void;
+  
+  // タイマー制御アクション
+  startTimer: () => void;
+  stopTimer: () => void;
+  toggleTimer: () => void;
+  tick: () => void;
+  handleTimerComplete: () => void;
+  switchToNextMode: () => void;
   
   // ヘルパー関数
   getTotalTime: () => number;
@@ -47,6 +58,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   sessions: 0,
   autoStart: false,
   showPopup: false,
+  intervalId: null,
   
   // セッター
   setWorkTime: (time) => {
@@ -84,6 +96,79 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   setAutoStart: (autoStart) => set({ autoStart }),
   setShowPopup: (show) => set({ showPopup: show }),
   
+  // タイマー制御アクション
+  startTimer: () => {
+    const { intervalId, stopTimer } = get();
+    if (intervalId) stopTimer(); // 既存のタイマーをクリア
+    
+    const newIntervalId = setInterval(() => {
+      get().tick();
+    }, 1000);
+    
+    set({ intervalId: newIntervalId, isRunning: true });
+  },
+  
+  stopTimer: () => {
+    const { intervalId } = get();
+    if (intervalId) {
+      clearInterval(intervalId);
+      set({ intervalId: null, isRunning: false });
+    }
+  },
+  
+  toggleTimer: () => {
+    const { isRunning, startTimer, stopTimer } = get();
+    if (isRunning) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
+  },
+  
+  tick: () => {
+    const { timeLeft, handleTimerComplete } = get();
+    if (timeLeft <= 1) {
+      handleTimerComplete();
+    } else {
+      set({ timeLeft: timeLeft - 1 });
+    }
+  },
+  
+  handleTimerComplete: () => {
+    const { stopTimer, mode, setSessions, switchToNextMode } = get();
+    stopTimer();
+    
+    // 作業セッション完了時に経験値付与とセッション増加
+    if (mode === 'work') {
+      setSessions((prev) => prev + 1);
+      // 経験値付与はUIコンポーネント側で処理
+    }
+    
+    switchToNextMode();
+  },
+  
+  switchToNextMode: () => {
+    const { mode, sessions, longBreakTime, shortBreakTime, workTime, autoStart, startTimer } = get();
+    
+    if (mode === 'work') {
+      // 4セッション毎に長い休憩
+      if ((sessions + 1) % 4 === 0) {
+        set({ mode: 'longBreak', timeLeft: longBreakTime * 60 });
+      } else {
+        set({ mode: 'shortBreak', timeLeft: shortBreakTime * 60 });
+      }
+    } else {
+      set({ mode: 'work', timeLeft: workTime * 60 });
+    }
+    
+    // 自動スタート機能
+    if (autoStart) {
+      setTimeout(() => {
+        startTimer();
+      }, 2000); // 2秒後に自動開始
+    }
+  },
+  
   // ヘルパー関数
   getTotalTime: () => {
     const { mode, workTime, shortBreakTime, longBreakTime } = get();
@@ -112,7 +197,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   },
   
   resetTimer: () => {
-    const { workTime } = get();
+    const { workTime, stopTimer } = get();
+    stopTimer(); // タイマーを停止
     set({
       mode: 'work',
       timeLeft: workTime * 60,

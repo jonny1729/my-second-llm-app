@@ -18,49 +18,30 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
     mode, timeLeft, isRunning, sessions, autoStart, showPopup,
     setWorkTime, setShortBreakTime, setLongBreakTime,
     setMode, setTimeLeft, setIsRunning, setSessions, setAutoStart, setShowPopup,
-    getTotalTime, formatTime, getModeText, resetTimer
+    getTotalTime, formatTime, getModeText, resetTimer, toggleTimer, handleTimerComplete
   } = usePomodoroStore();
   
   const [showCompleteEffect, setShowCompleteEffect] = useState(false);
   
   // 効果音用のAudioContextとオーディオ参照
   const audioContextRef = useRef<AudioContext | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 初期化時にタイマーをリセット
   useEffect(() => {
     resetTimer();
   }, [workTime, shortBreakTime, longBreakTime, resetTimer]);
 
-  // タイマーの実行
+  // タイマー完了イベントの監視（効果音・エフェクト・経験値付与用）
+  const prevTimeLeftRef = useRef(timeLeft);
   useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev: number) => {
-          if (prev <= 1) {
-            handleTimerComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+    // タイマーが0になった瞬間を検知
+    if (prevTimeLeftRef.current > 0 && timeLeft === 0 && !isRunning) {
+      handleTimerCompleteEffects();
     }
+    prevTimeLeftRef.current = timeLeft;
+  }, [timeLeft, isRunning]);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, timeLeft]);
-
-  // タイマー完了時の処理
-  const handleTimerComplete = async () => {
-    setIsRunning(false);
-    
+  const handleTimerCompleteEffects = async () => {
     // 効果音を再生
     await playCompletionSound();
     
@@ -72,11 +53,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
     if (mode === 'work') {
       const expGained = 20; // 25分作業で20EXP
       addExperience('pomodoro', null, expGained, 'ポモドーロセッション完了');
-      setSessions((prev: number) => prev + 1);
     }
-    
-    // 次のモードに切り替え
-    switchToNextMode();
   };
 
   // 効果音の生成・再生
@@ -121,43 +98,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
     }
   };
 
-  // 次のモードに切り替え
-  const switchToNextMode = () => {
-    if (mode === 'work') {
-      // 4セッション毎に長い休憩
-      if ((sessions + 1) % 4 === 0) {
-        setMode('longBreak');
-        setTimeLeft(longBreakTime * 60);
-      } else {
-        setMode('shortBreak');
-        setTimeLeft(shortBreakTime * 60);
-      }
-    } else {
-      setMode('work');
-      setTimeLeft(workTime * 60);
-    }
-    
-    // 自動スタート機能
-    if (autoStart) {
-      setTimeout(() => {
-        setIsRunning(true);
-      }, 2000); // 2秒後に自動開始
-    }
-  };
-
-  // タイマーをリセット（ローカル版）
-  const resetTimerLocal = () => {
-    setIsRunning(false);
-    resetTimer();
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-  };
-
-  // 開始/停止の切り替え
-  const toggleTimer = () => {
-    setIsRunning(!isRunning);
-  };
 
   // 進捗の計算
 
@@ -242,7 +182,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = () => {
 
           <motion.button
             className="timer-btn reset"
-            onClick={resetTimerLocal}
+            onClick={resetTimer}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
