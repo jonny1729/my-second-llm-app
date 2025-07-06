@@ -187,7 +187,7 @@ const DeveloperTools: React.FC = () => {
         transition={{ duration: 0.5 }}
       >
         <h2>🛠️ 開発者ツール</h2>
-        <p>アプリの内部動作をリアルタイムで監視できます</p>
+        <p>アプリの内部動作をリアルタイムで監視・デバッグできます</p>
       </motion.div>
 
       <div className="dev-controls">
