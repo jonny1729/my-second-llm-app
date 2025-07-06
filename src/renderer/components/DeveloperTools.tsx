@@ -11,6 +11,8 @@ interface LogEntry {
 const DeveloperTools: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,6 +20,20 @@ const DeveloperTools: React.FC = () => {
     if (window.electronAPI) {
       window.electronAPI.on('main-process-log', (logData: LogEntry) => {
         setLogs(prev => [...prev.slice(-99), logData]);
+      });
+
+      // アップデート進捗を監視
+      window.electronAPI.on('update-download-progress', (progress: { percent: number }) => {
+        console.log('📈 Download progress received:', progress.percent + '%');
+        setDownloadProgress(Math.round(progress.percent || 0));
+        setIsDownloading(true);
+      });
+
+      // ダウンロード完了
+      window.electronAPI.on('update-downloaded', () => {
+        console.log('✅ Download completed');
+        setIsDownloading(false);
+        setDownloadProgress(100);
       });
     }
 
@@ -106,6 +122,10 @@ const DeveloperTools: React.FC = () => {
 
   const testUpdateDownload = async () => {
     console.log('🧪 Testing update download...');
+    // 進捗をリセット
+    setDownloadProgress(0);
+    setIsDownloading(false);
+    
     if (window.electronAPI) {
       try {
         console.log('Step 1: Checking for updates...');
@@ -121,6 +141,7 @@ const DeveloperTools: React.FC = () => {
         
         if (updateInfo && updateInfo.hasUpdate) {
           console.log('Step 2: Starting download...');
+          setIsDownloading(true);
           
           // タイムアウト付きでダウンロード
           const downloadPromise = window.electronAPI.invoke('download-and-install-update');
@@ -135,6 +156,7 @@ const DeveloperTools: React.FC = () => {
         }
       } catch (error) {
         console.error('Update test failed:', error);
+        setIsDownloading(false);
       }
     } else {
       console.warn('electronAPI not available');
@@ -192,8 +214,9 @@ const DeveloperTools: React.FC = () => {
         <button 
           className="btn btn-warning"
           onClick={testUpdateDownload}
+          disabled={isDownloading}
         >
-          🧪 アップデートテスト
+          {isDownloading ? `📥 ダウンロード中 (${downloadProgress}%)` : '🧪 アップデートテスト'}
         </button>
 
         <button 

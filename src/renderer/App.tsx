@@ -38,7 +38,9 @@ const App: React.FC = () => {
     appVersion, 
     setAppVersion,
     isDownloading,
-    setIsDownloading
+    setIsDownloading,
+    downloadProgress,
+    setDownloadProgress
   } = useUpdateStore();
 
   // v1.2.5新機能: アプリバージョン取得（updateStoreを使用）
@@ -55,9 +57,6 @@ const App: React.FC = () => {
     };
     loadAppVersion();
   }, [setAppVersion]);
-  // 【実装状況】: MIGRATED TO STORE
-  // 【説明】: downloadProgress状態をupdateStoreに移行
-  const { downloadProgress, setDownloadProgress } = useUpdateStore();
 
   useEffect(() => {
     loadUserStats();

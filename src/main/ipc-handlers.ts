@@ -218,6 +218,11 @@ export function setupIpcHandlers(db: Database) {
         return String(arg);
       }).join(' ');
       
+      // 空のメッセージや無意味なログをフィルタリング
+      if (!message.trim() || message.length < 3) {
+        return;
+      }
+      
       // 全てのウィンドウにログを送信
       const { BrowserWindow } = require('electron');
       const allWindows = BrowserWindow.getAllWindows();
@@ -231,7 +236,7 @@ export function setupIpcHandlers(db: Database) {
                 minute: '2-digit',
                 second: '2-digit'
               }) + '.' + String(new Date().getMilliseconds()).padStart(3, '0'),
-              level,
+              level: level || 'info', // レベルがundefinedの場合はinfoにフォールバック
               message,
               source: 'main'
             });
