@@ -168,12 +168,13 @@ const DeveloperTools: React.FC = () => {
     if (window.electronAPI) {
       try {
         const version = await window.electronAPI.invoke('get-app-version');
-        console.log('App version retrieved successfully:', version);
+        console.log('✅ App version retrieved successfully:', version);
+        console.log('🎯 IPC communication is working properly');
       } catch (error) {
-        console.error('Simple IPC test failed:', error);
+        console.error('❌ Simple IPC test failed:', error);
       }
     } else {
-      console.warn('electronAPI not available');
+      console.warn('⚠️ electronAPI not available');
     }
   };
 
