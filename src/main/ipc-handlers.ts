@@ -144,25 +144,126 @@ export function setupIpcHandlers(db: Database) {
   });
 
   ipcMain.handle('download-and-install-update', async (event) => {
+    console.log('[IPC] download-and-install-update called');
     try {
+      console.log('[IPC] Getting UpdateManager...');
       const updateManager = getUpdateManager();
+      console.log('[IPC] UpdateManager obtained:', !!updateManager);
       
+      if (!updateManager) {
+        throw new Error('UpdateManager not available');
+      }
+
+      console.log('[IPC] Setting up progress listeners...');
       // プログレス通知のリスナーを設定
       updateManager.on('download-progress', (progressInfo) => {
+        console.log('[IPC] Progress event received:', progressInfo);
         event.sender.send('update-download-progress', progressInfo);
       });
 
       updateManager.on('update-downloaded', (info) => {
+        console.log('[IPC] Download completed event received:', info);
         event.sender.send('update-downloaded', info);
       });
 
+      console.log('[IPC] Starting downloadAndInstall...');
       await updateManager.downloadAndInstall();
+      console.log('[IPC] downloadAndInstall completed successfully');
       return true;
     } catch (error) {
-      console.error('アップデートダウンロード・インストールエラー:', error);
+      console.error('[IPC] アップデートダウンロード・インストールエラー:', error);
+      console.error('[IPC] Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
+      });
       throw error;
     }
   });
 
   // 【注意】: install-and-restart ハンドラーは updateHandler.ts で管理
+
+  // 開発者ツール関連
+  ipcMain.handle('open-dev-tools', (event) => {
+    const webContents = event.sender;
+    if (webContents.isDevToolsOpened()) {
+      webContents.closeDevTools();
+    } else {
+      webContents.openDevTools();
+    }
+    return true;
+  });
+
+  // メインプロセスログをレンダラーに送信
+  const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error,
+    info: console.info
+  };
+
+  const sendLogToRenderer = (level: string, args: any[]) => {
+    try {
+      const message = args.map(arg => {
+        if (typeof arg === 'object') {
+          if (arg instanceof Error) {
+            return `${arg.name}: ${arg.message}\n${arg.stack}`;
+          }
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch (jsonError) {
+            return `[Object: ${arg.constructor?.name || 'Unknown'}]`;
+          }
+        }
+        return String(arg);
+      }).join(' ');
+      
+      // 全てのウィンドウにログを送信
+      const { BrowserWindow } = require('electron');
+      const allWindows = BrowserWindow.getAllWindows();
+      allWindows.forEach(window => {
+        if (window && !window.isDestroyed() && window.webContents) {
+          try {
+            window.webContents.send('main-process-log', {
+              timestamp: new Date().toLocaleTimeString('ja-JP', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              }) + '.' + String(new Date().getMilliseconds()).padStart(3, '0'),
+              level,
+              message,
+              source: 'main'
+            });
+          } catch (sendError) {
+            // ログ送信エラーは無視（無限ループを防ぐ）
+          }
+        }
+      });
+    } catch (error) {
+      // エラーが発生してもログ転送を止めない
+      originalConsole.error('[LOG-FORWARD-ERROR]', error);
+    }
+  };
+
+  // コンソールメソッドをオーバーライド
+  console.log = (...args) => {
+    originalConsole.log(...args);
+    sendLogToRenderer('info', args);
+  };
+
+  console.warn = (...args) => {
+    originalConsole.warn(...args);
+    sendLogToRenderer('warn', args);
+  };
+
+  console.error = (...args) => {
+    originalConsole.error(...args);
+    sendLogToRenderer('error', args);
+  };
+
+  console.info = (...args) => {
+    originalConsole.info(...args);
+    sendLogToRenderer('debug', args);
+  };
 }

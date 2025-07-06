@@ -47,7 +47,14 @@ export class UpdateManager extends EventEmitter {
 
   constructor() {
     super();
-    this.config = this.loadConfig();
+    console.log('[UpdateManager] Constructor called');
+    try {
+      this.config = this.loadConfig();
+      console.log('[UpdateManager] Config loaded:', this.config);
+    } catch (error) {
+      console.error('[UpdateManager] Failed to load config:', error);
+      throw error;
+    }
     this.setupAutoUpdater();
   }
 
@@ -213,20 +220,47 @@ export class UpdateManager extends EventEmitter {
       // レート制限を避けるため、少し待機
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const response = await fetch(apiUrl, { headers });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('リポジトリまたはリリースが見つかりません');
-        } else if (response.status === 401) {
-          throw new Error('GitHubトークンが無効です');
-        } else if (response.status === 403) {
-          throw new Error('API利用制限に達しています');
-        }
-        throw new Error(`GitHub API error: ${response.status}`);
-      }
-      
-      const release = await response.json();
+      // Node.js環境でのHTTPS リクエスト
+      const release = await new Promise<any>((resolve, reject) => {
+        const req = https.request(apiUrl, {
+          headers,
+          method: 'GET'
+        }, (res) => {
+          let data = '';
+          
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          
+          res.on('end', () => {
+            if (res.statusCode !== 200) {
+              if (res.statusCode === 404) {
+                reject(new Error('リポジトリまたはリリースが見つかりません'));
+              } else if (res.statusCode === 401) {
+                reject(new Error('GitHubトークンが無効です'));
+              } else if (res.statusCode === 403) {
+                reject(new Error('API利用制限に達しています'));
+              } else {
+                reject(new Error(`GitHub API error: ${res.statusCode}`));
+              }
+              return;
+            }
+            
+            try {
+              const result = JSON.parse(data);
+              resolve(result);
+            } catch (error) {
+              reject(new Error('Failed to parse JSON response'));
+            }
+          });
+        });
+        
+        req.on('error', (error) => {
+          reject(error);
+        });
+        
+        req.end();
+      });
       
       console.log(`Latest release: ${release.tag_name}, Current: ${currentVersion}`);
       console.log('Release assets:', release.assets);
@@ -316,12 +350,20 @@ export class UpdateManager extends EventEmitter {
   }
 
   public async downloadAndInstall(): Promise<void> {
+    console.log('[UpdateManager] downloadAndInstall method called');
     try {
       if (!this.latestUpdateInfo) {
-        throw new Error('Please check update first');
+        console.log('[UpdateManager] No latestUpdateInfo available, checking for updates first...');
+        const updateInfo = await this.checkForUpdates();
+        if (!updateInfo || !updateInfo.hasUpdate) {
+          throw new Error('No updates available for download');
+        }
+        console.log('[UpdateManager] Update check completed, proceeding with download...');
       }
       
-      console.log('Starting download and install process...');
+      console.log('[UpdateManager] Starting download and install process...');
+      console.log('[UpdateManager] latestUpdateInfo:', this.latestUpdateInfo);
+      console.log('[UpdateManager] config:', this.config);
       
       // 手動アップデート環境用の処理
       if (this.config.source === 'github') {
@@ -565,8 +607,18 @@ export class UpdateManager extends EventEmitter {
 let updateManagerInstance: UpdateManager | null = null;
 
 export function getUpdateManager(): UpdateManager {
+  console.log('[UpdateManager] getUpdateManager called');
   if (!updateManagerInstance) {
-    updateManagerInstance = new UpdateManager();
+    console.log('[UpdateManager] Creating new instance...');
+    try {
+      updateManagerInstance = new UpdateManager();
+      console.log('[UpdateManager] Instance created successfully');
+    } catch (error) {
+      console.error('[UpdateManager] Failed to create instance:', error);
+      throw error;
+    }
+  } else {
+    console.log('[UpdateManager] Using existing instance');
   }
   return updateManagerInstance;
 }

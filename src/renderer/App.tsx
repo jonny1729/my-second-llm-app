@@ -7,6 +7,7 @@ import Calendar from './components/Calendar';
 import Diary from './components/Diary';
 import Settings from './components/Settings';
 import PomodoroTimer from './components/PomodoroTimer';
+import DeveloperTools from './components/DeveloperTools';
 import PomodoroPopup from './components/PomodoroPopup';
 import LevelUpModal from './components/LevelUpModal';
 import UpdateNotification, { UpdateInfo, UpdateProgress } from './components/UpdateNotification';
@@ -14,7 +15,7 @@ import { useUserStore } from './stores/userStore';
 import { usePomodoroStore } from './stores/pomodoroStore';
 import { useUpdateStore } from './stores/updateStore';
 
-type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'pomodoro' | 'stats' | 'settings';
+type ActivePage = 'dashboard' | 'tasks' | 'goals' | 'calendar' | 'diary' | 'pomodoro' | 'stats' | 'settings' | 'developer';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
@@ -181,6 +182,8 @@ const App: React.FC = () => {
         return <div className="coming-soon">📊 統計機能は開発中です</div>;
       case 'settings':
         return <Settings />;
+      case 'developer':
+        return <DeveloperTools />;
       default:
         return <Dashboard />;
     }
@@ -259,6 +262,12 @@ const App: React.FC = () => {
                 onClick={() => setActivePage('settings')}
               >
                 ⚙️ 設定
+              </li>
+              <li 
+                className={activePage === 'developer' ? 'active' : ''}
+                onClick={() => setActivePage('developer')}
+              >
+                🛠️ 開発者
               </li>
             </ul>
           </nav>
